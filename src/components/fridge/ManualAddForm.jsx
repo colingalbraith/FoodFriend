@@ -32,7 +32,7 @@ export default function ManualAddForm({ onAdd, onClose }) {
     <div>
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <input className="cozy-input" placeholder="Item name" value={name}
-          onChange={e => handleNameChange(e.target.value)} autoFocus />
+          onChange={e => handleNameChange(e.target.value)} />
         {autoFilled && (
           <div style={{ fontSize: 11, color: "#6b8e6b", fontWeight: 600, marginTop: -6 }}>
             ✨ Auto-filled category & expiry estimate

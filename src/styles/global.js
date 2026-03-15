@@ -103,6 +103,8 @@ export const globalStyles = `
     border-top: 1px solid var(--border);
     flex-shrink: 0;
     box-shadow: 0 -2px 20px rgba(139,109,71,0.06);
+    position: relative;
+    z-index: 1;
   }
 
   .bottom-nav-btn {
@@ -312,6 +314,7 @@ export const globalStyles = `
   .modal-overlay {
     position: fixed; inset: 0; z-index: 1000;
     display: flex; align-items: flex-end; justify-content: center;
+    padding: 0;
   }
   .modal-backdrop {
     position: absolute; inset: 0; background: rgba(90,62,34,0.35);
@@ -320,9 +323,9 @@ export const globalStyles = `
   .modal-sheet {
     position: relative; background: var(--card);
     border-radius: 20px 20px 0 0; width: 100%; max-width: 520px;
-    max-height: calc(90vh - var(--safe-bottom));
-    overflow: auto; -webkit-overflow-scrolling: touch;
-    padding: 20px 20px calc(20px + var(--safe-bottom));
+    max-height: 90vh;
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
+    padding: 16px 20px 24px;
     animation: sheetUp 0.3s cubic-bezier(0.32, 0.72, 0, 1);
     box-shadow: 0 -4px 40px rgba(139,109,71,0.15);
   }

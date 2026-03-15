@@ -1,11 +1,10 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import Card from "../ui/Card";
 
 export default function BarcodeScanPanel({ onAdd, onClose }) {
   const fileRef = useRef(null);
   const [status, setStatus] = useState("idle");
   const [scannedItem, setScannedItem] = useState(null);
-  const [manualCode, setManualCode] = useState("");
   const [error, setError] = useState(null);
 
   function handleFile(e) {
@@ -62,8 +61,8 @@ export default function BarcodeScanPanel({ onAdd, onClose }) {
       }
     } catch {}
 
-    setError("Couldn't detect a barcode. Try a clearer photo or enter the number manually.");
-    setStatus("manual");
+    setError("Couldn't detect a barcode. Try a clearer photo.");
+    setStatus("idle");
   }
 
   async function lookupBarcode(code) {
@@ -96,58 +95,35 @@ export default function BarcodeScanPanel({ onAdd, onClose }) {
     setScannedItem(null);
     setStatus("idle");
     setError(null);
-    setManualCode("");
-  }
-
-  function handleManualSubmit(e) {
-    e.preventDefault();
-    if (manualCode.trim()) lookupBarcode(manualCode.trim());
   }
 
   return (
     <div>
       {status === "idle" && (
-        <div style={{ textAlign: "center", animation: "fadeIn 0.3s ease-out" }}>
-          <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 16, lineHeight: 1.5 }}>
+        <div style={{ animation: "fadeIn 0.3s ease-out" }}>
+          <p style={{ fontSize: 14, color: "var(--muted)", marginBottom: 16, lineHeight: 1.5 }}>
             Take a photo of a barcode to identify the product automatically.
           </p>
           <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={handleFile} style={{ display: "none" }} />
           <button className="cozy-btn primary full" onClick={() => fileRef.current?.click()}>
             Take Photo
           </button>
-          <div style={{ margin: "16px 0 8px", fontSize: 11, color: "var(--muted)", fontWeight: 700 }}>
-            Or enter barcode manually
-          </div>
-          <form onSubmit={handleManualSubmit} style={{ display: "flex", gap: 8 }}>
-            <input className="cozy-input" placeholder="Barcode number..." value={manualCode}
-              onChange={e => setManualCode(e.target.value)} inputMode="numeric" />
-            <button className="cozy-btn primary" type="submit" disabled={!manualCode.trim()}>Look Up</button>
-          </form>
+          {error && (
+            <div style={{ fontSize: 13, color: "#c0392b", marginTop: 14, textAlign: "center" }}>
+              {error}
+            </div>
+          )}
         </div>
       )}
 
       {(status === "detecting" || status === "looking-up") && (
-        <div style={{ textAlign: "center", padding: 30, animation: "fadeIn 0.3s ease-out" }}>
+        <div style={{ textAlign: "center", padding: 20, animation: "fadeIn 0.3s ease-out" }}>
           <div className="loading-dots" style={{ marginBottom: 12 }}>
             <span /><span /><span />
           </div>
           <div style={{ fontSize: 14, fontWeight: 700, color: "var(--muted)" }}>
             {status === "detecting" ? "Reading barcode..." : "Looking up product..."}
           </div>
-        </div>
-      )}
-
-      {status === "manual" && (
-        <div style={{ textAlign: "center", animation: "fadeIn 0.3s ease-out" }}>
-          <div style={{ fontSize: 13, color: "#c0392b", marginBottom: 12 }}>{error}</div>
-          <form onSubmit={handleManualSubmit} style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-            <input className="cozy-input" placeholder="Type barcode number..." value={manualCode}
-              onChange={e => setManualCode(e.target.value)} inputMode="numeric" autoFocus />
-            <button className="cozy-btn primary" type="submit" disabled={!manualCode.trim()}>Look Up</button>
-          </form>
-          <button className="cozy-btn secondary full" onClick={() => { setStatus("idle"); setError(null); }}>
-            Try Another Photo
-          </button>
         </div>
       )}
 
@@ -160,7 +136,7 @@ export default function BarcodeScanPanel({ onAdd, onClose }) {
             </div>
             <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>{scannedItem.category}</div>
           </Card>
-          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+          <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
             <button className="cozy-btn primary" style={{ flex: 1 }} onClick={addAndReset}>Add & Scan Next</button>
             <button className="cozy-btn secondary" onClick={onClose}>Done</button>
           </div>
