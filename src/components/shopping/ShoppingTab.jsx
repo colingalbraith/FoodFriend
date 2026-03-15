@@ -40,11 +40,12 @@ export default function ShoppingTab({ list, saveList }) {
             {unchecked.map((item, idx) => (
               <div key={item.id} className="shopping-item" style={{ borderBottom: idx < unchecked.length - 1 ? "1px solid #f0e6d6" : "none" }}>
                 <div onClick={() => toggle(item.id)} style={{
-                  width: 22, height: 22, borderRadius: 7, border: "2px solid #d4b896",
+                  width: 26, height: 26, borderRadius: 8, border: "2px solid #d4b896",
                   cursor: "pointer", flexShrink: 0, transition: "all 0.2s",
+                  WebkitTapHighlightColor: "transparent",
                 }} />
                 <span style={{ flex: 1, fontWeight: 600, fontSize: 14 }}>{item.name}</span>
-                <button className="cozy-btn danger" style={{ padding: "2px 8px", fontSize: 12, borderRadius: 8 }} onClick={() => remove(item.id)}>✕</button>
+                <button className="cozy-btn danger" style={{ padding: "6px 12px", fontSize: 12, borderRadius: 8, minHeight: 36 }} onClick={() => remove(item.id)}>✕</button>
               </div>
             ))}
             {checked.length > 0 && (
@@ -56,10 +57,11 @@ export default function ShoppingTab({ list, saveList }) {
                 {checked.map(item => (
                   <div key={item.id} className="shopping-item" style={{ opacity: 0.4 }}>
                     <div onClick={() => toggle(item.id)} style={{
-                      width: 22, height: 22, borderRadius: 7, border: "2px solid #6b8e6b",
+                      width: 26, height: 26, borderRadius: 8, border: "2px solid #6b8e6b",
                       background: "#6b8e6b", cursor: "pointer", flexShrink: 0,
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      color: "white", fontSize: 11, fontWeight: 800,
+                      color: "white", fontSize: 12, fontWeight: 800,
+                      WebkitTapHighlightColor: "transparent",
                     }}>✓</div>
                     <span style={{ flex: 1, fontSize: 14, textDecoration: "line-through" }}>{item.name}</span>
                   </div>

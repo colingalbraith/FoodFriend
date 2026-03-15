@@ -11,6 +11,7 @@ import QuickAddPanel from "./QuickAddPanel";
 import ManualAddForm from "./ManualAddForm";
 import BarcodeScanPanel from "./BarcodeScanPanel";
 import ReceiptScanPanel from "./ReceiptScanPanel";
+import FridgeView from "./FridgeView";
 
 export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStock, staples, saveStaples }) {
   const [addMode, setAddMode] = useState(null);
@@ -45,10 +46,19 @@ export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStoc
 
   const sorted = [...filtered].sort((a, b) => daysUntil(a.expiry) - daysUntil(b.expiry) || a.name.localeCompare(b.name));
 
-  const filterOptions = ["All", "Expiring", "Expired", ...CATEGORIES];
+  const usedCategories = [...new Set(items.map(i => i.category))].sort();
+  const hasExpiring = items.some(i => { const d = daysUntil(i.expiry); return d >= 0 && d <= 3; });
+  const filterOptions = [
+    "All",
+    ...(hasExpiring ? ["Expiring"] : []),
+    ...(usedCategories.length > 1 ? usedCategories : []),
+  ];
 
   return (
     <div style={{ animation: "fadeIn 0.3s ease-out" }}>
+      {/* Fridge visualization */}
+      <FridgeView items={items} />
+
       {/* Add buttons */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8, marginBottom: 14 }}>
         {[
@@ -88,13 +98,8 @@ export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStoc
       </div>
 
       {/* Items list */}
-      <Card style={{ padding: 6 }}>
-        {sorted.length === 0 ? (
-          <EmptyState
-            title={filter === "All" ? "Your fridge is empty!" : `No ${filter.toLowerCase()} items`}
-            sub="Tap any add button above to get started"
-          />
-        ) : sorted.map((item, idx) => {
+      {sorted.length > 0 && <Card style={{ padding: 6 }}>
+        {sorted.map((item, idx) => {
           const days = daysUntil(item.expiry);
           const label = expiryBadge(days);
           const isExpired = days < 0;
@@ -134,7 +139,7 @@ export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStoc
             </div>
           );
         })}
-      </Card>
+      </Card>}
 
       {items.length > 0 && (
         <div style={{ textAlign: "center", marginTop: 12, fontSize: 11, color: "var(--muted)" }}>

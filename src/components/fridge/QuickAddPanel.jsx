@@ -16,7 +16,6 @@ export default function QuickAddPanel({ onAdd, onClose, existingItems }) {
       .then(r => r.json())
       .then(setPopular)
       .catch(() => {});
-    inputRef.current?.focus();
   }, []);
 
   const search = useCallback((term) => {
@@ -61,7 +60,6 @@ export default function QuickAddPanel({ onAdd, onClose, existingItems }) {
           value={query}
           onChange={e => handleInput(e.target.value)}
           style={{ paddingLeft: 36 }}
-          autoFocus
         />
         <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", fontSize: 16, opacity: 0.4 }}>🔍</span>
         {loading && (

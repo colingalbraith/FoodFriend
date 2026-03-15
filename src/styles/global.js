@@ -11,22 +11,19 @@ export const globalStyles = `
     --accent: #c4956a;
     --display: 'Caveat', cursive;
     --body: 'Nunito', sans-serif;
-    --safe-bottom: env(safe-area-inset-bottom, 0px);
-    --safe-top: env(safe-area-inset-top, 0px);
     --nav-height: 64px;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
-  html {
-    height: 100%;
+  html, body, #root {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
     overflow: hidden;
-    background: var(--bg);
   }
 
   body {
-    height: 100%;
-    overflow: hidden;
     font-family: var(--body);
     color: var(--text);
     background: var(--bg-grad);
@@ -36,17 +33,14 @@ export const globalStyles = `
     overscroll-behavior: none;
   }
 
-  #root { height: 100%; }
-
   /* ─── App Shell ─── */
   .app-shell {
-    height: 100%;
+    height: 100vh;
     display: flex;
     flex-direction: column;
     background: var(--bg-grad);
     font-family: var(--body);
     color: var(--text);
-    padding-top: var(--safe-top);
   }
 
   .app-content {
@@ -103,14 +97,11 @@ export const globalStyles = `
   /* ─── Bottom Navigation ─── */
   .bottom-nav {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     justify-content: space-around;
     background: var(--card);
     border-top: 1px solid var(--border);
-    padding-bottom: var(--safe-bottom);
-    height: calc(var(--nav-height) + var(--safe-bottom));
     flex-shrink: 0;
-    position: relative;
     box-shadow: 0 -2px 20px rgba(139,109,71,0.06);
   }
 
@@ -121,7 +112,7 @@ export const globalStyles = `
     justify-content: center;
     gap: 2px;
     flex: 1;
-    padding: 8px 0 4px;
+    height: var(--nav-height);
     background: none;
     border: none;
     cursor: pointer;
