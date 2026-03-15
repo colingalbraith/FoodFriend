@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f5ebe0"/>
+      <stop offset="100%" stop-color="#e8d5b7"/>
+    </linearGradient>
+    <linearGradient id="door" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fffaf3"/>
+      <stop offset="100%" stop-color="#f5ebe0"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="108" fill="url(#bg)"/>
+  <!-- Fridge body -->
+  <rect x="146" y="72" width="220" height="368" rx="24" fill="#c4956a" opacity="0.9"/>
+  <rect x="158" y="84" width="196" height="160" rx="16" fill="url(#door)"/>
+  <rect x="158" y="256" width="196" height="172" rx="16" fill="url(#door)"/>
+  <!-- Handle -->
+  <rect x="320" y="130" width="8" height="60" rx="4" fill="#a8784e"/>
+  <rect x="320" y="300" width="8" height="60" rx="4" fill="#a8784e"/>
+  <!-- Shelf items -->
+  <circle cx="210" cy="140" r="16" fill="#7cb87c" opacity="0.8"/>
+  <circle cx="250" cy="145" r="12" fill="#e8c86a" opacity="0.8"/>
+  <circle cx="288" cy="138" r="14" fill="#d48a7b" opacity="0.8"/>
+  <rect x="195" y="175" width="50" height="30" rx="6" fill="#8ab4d4" opacity="0.6"/>
+  <rect x="255" y="178" width="40" height="24" rx="6" fill="#c49a6a" opacity="0.6"/>
+  <!-- Bottom compartment items -->
+  <circle cx="220" cy="310" r="18" fill="#7cb87c" opacity="0.6"/>
+  <circle cx="270" cy="315" r="14" fill="#e8c86a" opacity="0.6"/>
+  <rect x="200" y="350" width="60" height="20" rx="5" fill="#d48a7b" opacity="0.5"/>
+</svg>
