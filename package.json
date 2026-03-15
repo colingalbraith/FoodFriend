@@ -1,0 +1,24 @@
+{
+  "name": "fridge-friend",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"node server/index.js\" \"vite\" --names api,vite",
+    "build": "vite build",
+    "preview": "concurrently \"node server/index.js\" \"vite preview --host 0.0.0.0\" --names api,vite",
+    "server": "node server/index.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.8.0",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.5.2",
+    "concurrently": "^9.2.1",
+    "vite": "^6.3.5"
+  }
+}
