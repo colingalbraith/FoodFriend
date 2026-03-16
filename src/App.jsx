@@ -11,6 +11,7 @@ import SettingsTab from "./components/settings/SettingsTab";
 import ErrorBoundary from "./components/ui/ErrorBoundary";
 import Toast from "./components/ui/Toast";
 import Onboarding from "./components/onboarding/Onboarding";
+import Walkthrough from "./components/onboarding/Walkthrough";
 
 const TAB_ICONS = {
   fridge: (active) => (
@@ -59,6 +60,7 @@ export default function FridgeFriend() {
   const [userProfile, setUserProfile] = useState(null);
   const [workoutTemplates, setWorkoutTemplates] = useState([]);
   const [toast, setToast] = useState(null);
+  const [showWalkthrough, setShowWalkthrough] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
   const showToast = useCallback((message, undoFn) => {
@@ -162,6 +164,7 @@ export default function FridgeFriend() {
         <Onboarding onComplete={({ profile, macroGoals: goals }) => {
           saveUserProfile(profile);
           if (goals) saveMacroGoals(goals);
+          setShowWalkthrough(true);
         }} />
       </>
     );
@@ -179,6 +182,14 @@ export default function FridgeFriend() {
           message={toast.message}
           onUndo={toast.undoFn ? () => { toast.undoFn(); dismissToast(); } : null}
           onDismiss={dismissToast}
+        />
+      )}
+
+      {/* Walkthrough overlay */}
+      {showWalkthrough && (
+        <Walkthrough
+          onComplete={() => setShowWalkthrough(false)}
+          onSwitchTab={setTab}
         />
       )}
 
