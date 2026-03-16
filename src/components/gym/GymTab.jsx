@@ -1,19 +1,18 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { makeId } from "../../utils/itemHelpers";
 import Card from "../ui/Card";
 import Modal from "../ui/Modal";
 
-const MUSCLE_GROUPS = ["Chest", "Back", "Shoulders", "Arms", "Legs", "Core", "Cardio", "Full Body"];
+const MUSCLE_GROUPS = ["Chest", "Back", "Shoulders", "Arms", "Legs", "Core", "Cardio"];
 
-const COMMON_EXERCISES = {
+const EXERCISES = {
   Chest: ["Bench Press", "Incline Press", "Dumbbell Flyes", "Push-ups", "Cable Crossover"],
   Back: ["Deadlift", "Pull-ups", "Barbell Row", "Lat Pulldown", "Cable Row"],
-  Shoulders: ["Overhead Press", "Lateral Raise", "Face Pull", "Arnold Press", "Front Raise"],
-  Arms: ["Bicep Curl", "Tricep Pushdown", "Hammer Curl", "Skull Crusher", "Preacher Curl"],
-  Legs: ["Squat", "Leg Press", "Romanian Deadlift", "Leg Curl", "Calf Raise", "Lunges"],
-  Core: ["Plank", "Crunches", "Leg Raise", "Russian Twist", "Ab Wheel"],
-  Cardio: ["Running", "Cycling", "Rowing", "Jump Rope", "Stair Climber"],
-  "Full Body": ["Clean & Press", "Burpees", "Thrusters", "Kettlebell Swing"],
+  Shoulders: ["Overhead Press", "Lateral Raise", "Face Pull", "Arnold Press"],
+  Arms: ["Bicep Curl", "Tricep Pushdown", "Hammer Curl", "Skull Crusher"],
+  Legs: ["Squat", "Leg Press", "Romanian Deadlift", "Leg Curl", "Lunges", "Calf Raise"],
+  Core: ["Plank", "Crunches", "Leg Raise", "Russian Twist"],
+  Cardio: ["Running", "Cycling", "Rowing", "Jump Rope"],
 };
 
 function todayKey() {
@@ -22,18 +21,76 @@ function todayKey() {
 }
 
 export default function GymTab({ gymLog, saveGymLog }) {
-  const [section, setSection] = useState("log"); // "log" | "stats"
-  const [adding, setAdding] = useState(false);
-  const [exName, setExName] = useState("");
-  const [exGroup, setExGroup] = useState("Chest");
-  const [sets, setSets] = useState([{ weight: "", reps: "" }]);
-  const [exNotes, setExNotes] = useState("");
-  const [editingId, setEditingId] = useState(null);
+  const [section, setSection] = useState("log");
+  const [picking, setPicking] = useState(false);
+  const [activeEntry, setActiveEntry] = useState(null); // entry being built
+  const [weight, setWeight] = useState("");
+  const [reps, setReps] = useState("");
+  const weightRef = useRef(null);
 
   const today = todayKey();
   const todayWorkouts = (gymLog || []).filter(e => e.date === today);
 
-  // Last 7 days
+  // Recent unique exercises (last 20 logged)
+  const recentExercises = [...new Set((gymLog || []).map(e => e.name))].slice(0, 8);
+
+  // Last weight used for an exercise
+  function lastWeight(name) {
+    const prev = (gymLog || []).find(e => e.name === name && e.sets?.length > 0);
+    return prev ? prev.sets[prev.sets.length - 1].weight : "";
+  }
+
+  function lastReps(name) {
+    const prev = (gymLog || []).find(e => e.name === name && e.sets?.length > 0);
+    return prev ? prev.sets[prev.sets.length - 1].reps : "";
+  }
+
+  function pickExercise(name, group) {
+    const existing = todayWorkouts.find(e => e.name === name);
+    if (existing) {
+      setActiveEntry(existing);
+    } else {
+      const entry = { id: makeId(), date: today, name, group, sets: [], time: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) };
+      saveGymLog([entry, ...(gymLog || [])]);
+      setActiveEntry(entry);
+    }
+    setWeight(lastWeight(name)); setReps(lastReps(name));
+    setPicking(false);
+    setTimeout(() => weightRef.current?.focus(), 150);
+  }
+
+  function addSet() {
+    if (!activeEntry || (!weight && !reps)) return;
+    const updatedEntry = { ...activeEntry, sets: [...(activeEntry.sets || []), { weight: weight || "0", reps: reps || "0" }] };
+    saveGymLog((gymLog || []).map(e => e.id === activeEntry.id ? updatedEntry : e));
+    setActiveEntry(updatedEntry);
+    setReps(""); // keep weight, clear reps for next set
+  }
+
+  function removeLastSet() {
+    if (!activeEntry || !activeEntry.sets?.length) return;
+    const updatedEntry = { ...activeEntry, sets: activeEntry.sets.slice(0, -1) };
+    saveGymLog((gymLog || []).map(e => e.id === activeEntry.id ? updatedEntry : e));
+    setActiveEntry(updatedEntry);
+  }
+
+  function deleteExercise(id) {
+    saveGymLog((gymLog || []).filter(e => e.id !== id));
+    if (activeEntry?.id === id) setActiveEntry(null);
+  }
+
+  function getPR(name) {
+    let max = 0;
+    (gymLog || []).filter(e => e.name === name).forEach(e => (e.sets || []).forEach(s => { if (Number(s.weight) > max) max = Number(s.weight); }));
+    return max;
+  }
+
+  function getProgress(name) {
+    return (gymLog || []).filter(e => e.name === name && e.sets?.length > 0).slice(0, 5).reverse().map(e => ({
+      maxWeight: Math.max(...e.sets.map(s => Number(s.weight) || 0)),
+    }));
+  }
+
   const last7 = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(); d.setDate(d.getDate() - (6 - i));
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -41,63 +98,14 @@ export default function GymTab({ gymLog, saveGymLog }) {
 
   const weekData = last7.map(date => {
     const entries = (gymLog || []).filter(e => e.date === date);
-    const totalSets = entries.reduce((s, e) => s + (e.sets?.length || 0), 0);
-    const totalVolume = entries.reduce((s, e) => s + (e.sets || []).reduce((v, set) => v + (Number(set.weight) || 0) * (Number(set.reps) || 0), 0), 0);
     return {
-      date, entries: entries.length, totalSets, totalVolume,
+      date, entries: entries.length,
+      totalSets: entries.reduce((s, e) => s + (e.sets?.length || 0), 0),
+      totalVolume: entries.reduce((s, e) => s + (e.sets || []).reduce((v, set) => v + (Number(set.weight) || 0) * (Number(set.reps) || 0), 0), 0),
       label: date === today ? "Today" : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][new Date(date + "T12:00:00").getDay()],
       groups: [...new Set(entries.map(e => e.group))],
     };
   });
-
-  // All-time PRs for each exercise
-  function getPR(exerciseName) {
-    const entries = (gymLog || []).filter(e => e.name.toLowerCase() === exerciseName.toLowerCase());
-    let maxWeight = 0;
-    entries.forEach(e => (e.sets || []).forEach(s => { if (Number(s.weight) > maxWeight) maxWeight = Number(s.weight); }));
-    return maxWeight;
-  }
-
-  // Progress for an exercise (last 5 sessions)
-  function getProgress(exerciseName) {
-    const entries = (gymLog || []).filter(e => e.name.toLowerCase() === exerciseName.toLowerCase()).slice(0, 5).reverse();
-    return entries.map(e => ({
-      date: e.date,
-      maxWeight: Math.max(...(e.sets || []).map(s => Number(s.weight) || 0)),
-      totalVolume: (e.sets || []).reduce((v, s) => v + (Number(s.weight) || 0) * (Number(s.reps) || 0), 0),
-    }));
-  }
-
-  function addSet() { setSets([...sets, { weight: "", reps: "" }]); }
-  function updateSet(i, field, val) { setSets(sets.map((s, idx) => idx === i ? { ...s, [field]: val } : s)); }
-  function removeSet(i) { if (sets.length > 1) setSets(sets.filter((_, idx) => idx !== i)); }
-
-  function openAdd() {
-    setExName(""); setExGroup("Chest"); setSets([{ weight: "", reps: "" }]); setExNotes("");
-    setEditingId(null); setAdding(true);
-  }
-
-  function openEdit(entry) {
-    setExName(entry.name); setExGroup(entry.group); setSets(entry.sets || [{ weight: "", reps: "" }]);
-    setExNotes(entry.notes || ""); setEditingId(entry.id); setAdding(true);
-  }
-
-  function saveExercise() {
-    if (!exName.trim()) return;
-    const entry = {
-      id: editingId || makeId(), date: today, name: exName.trim(), group: exGroup,
-      sets: sets.filter(s => s.weight || s.reps), notes: exNotes.trim(),
-      time: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
-    };
-    if (editingId) {
-      saveGymLog((gymLog || []).map(e => e.id === editingId ? entry : e));
-    } else {
-      saveGymLog([entry, ...(gymLog || [])]);
-    }
-    setAdding(false);
-  }
-
-  function deleteExercise(id) { saveGymLog((gymLog || []).filter(e => e.id !== id)); }
 
   const maxVol = Math.max(1, ...weekData.map(d => d.totalVolume));
   const uniqueExercises = [...new Set((gymLog || []).map(e => e.name))];
@@ -110,67 +118,104 @@ export default function GymTab({ gymLog, saveGymLog }) {
         ))}
       </div>
 
-      {/* ─── LOG SECTION ─── */}
+      {/* ─── LOG ─── */}
       {section === "log" && (
         <>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
-            <div style={{ fontFamily: "var(--display)", fontSize: 24, fontWeight: 700 }}>Today's Workout</div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>{todayWorkouts.length} exercises</div>
+            <div style={{ fontFamily: "var(--display)", fontSize: 24, fontWeight: 700 }}>Workout</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>
+              {todayWorkouts.reduce((s, e) => s + (e.sets?.length || 0), 0)} sets
+            </div>
           </div>
 
-          <button className="cozy-btn primary full" onClick={openAdd} style={{ marginBottom: 14 }}>Log Exercise</button>
+          {/* Active exercise — set builder */}
+          {activeEntry && (
+            <Card style={{ padding: 14, marginBottom: 14, border: "2px solid var(--accent)" }}>
+              <div style={{ fontWeight: 800, fontSize: 16, color: "var(--text)", marginBottom: 4 }}>{activeEntry.name}</div>
+              <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 10 }}>{activeEntry.group}</div>
 
-          {todayWorkouts.length === 0 ? (
-            <Card style={{ padding: 20, textAlign: "center" }}>
-              <div style={{ fontSize: 13, color: "var(--muted)" }}>No exercises logged today. Hit the gym!</div>
+              {/* Existing sets */}
+              {activeEntry.sets?.length > 0 && (
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
+                  {activeEntry.sets.map((s, i) => (
+                    <div key={i} style={{ background: "#edf5ed", borderRadius: 8, padding: "5px 10px", fontSize: 13, fontWeight: 700, color: "#4a7a4a" }}>
+                      {s.weight}lb × {s.reps}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Quick set input */}
+              <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                <input ref={weightRef} className="cozy-input" placeholder="lbs" value={weight} onChange={e => setWeight(e.target.value)} inputMode="numeric" style={{ flex: 1, textAlign: "center" }} />
+                <span style={{ fontWeight: 700, color: "var(--muted)" }}>×</span>
+                <input className="cozy-input" placeholder="reps" value={reps} onChange={e => setReps(e.target.value)} inputMode="numeric" style={{ flex: 1, textAlign: "center" }}
+                  onKeyDown={e => { if (e.key === "Enter") addSet(); }} />
+                <button className="cozy-btn primary" onClick={addSet} style={{ padding: "10px 16px" }} disabled={!weight && !reps}>+</button>
+              </div>
+
+              <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                {activeEntry.sets?.length > 0 && (
+                  <button className="cozy-btn secondary" style={{ fontSize: 11, padding: "6px 12px" }} onClick={removeLastSet}>Undo</button>
+                )}
+                <button className="cozy-btn secondary" style={{ fontSize: 11, padding: "6px 12px" }} onClick={() => setActiveEntry(null)}>Done</button>
+                <button className="cozy-btn primary" style={{ flex: 1, fontSize: 12 }} onClick={() => setPicking(true)}>Next Exercise</button>
+              </div>
             </Card>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {todayWorkouts.map((entry, i) => {
+          )}
+
+          {/* Add exercise button */}
+          {!activeEntry && (
+            <button className="cozy-btn primary full" onClick={() => setPicking(true)} style={{ marginBottom: 14 }}>
+              {todayWorkouts.length === 0 ? "Start Workout" : "Add Exercise"}
+            </button>
+          )}
+
+          {/* Today's exercises */}
+          {todayWorkouts.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {todayWorkouts.filter(e => e.id !== activeEntry?.id).map((entry, i) => {
                 const pr = getPR(entry.name);
-                const entryMax = Math.max(...(entry.sets || []).map(s => Number(s.weight) || 0));
+                const entryMax = Math.max(0, ...(entry.sets || []).map(s => Number(s.weight) || 0));
                 const isPR = entryMax > 0 && entryMax >= pr;
                 return (
-                  <Card key={entry.id} style={{ padding: 0, overflow: "hidden", animation: `fadeIn 0.2s ease-out ${i * 30}ms both` }}>
-                    <div onClick={() => openEdit(entry)} style={{ padding: "14px 16px", cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                        <div>
-                          <div style={{ fontWeight: 700, fontSize: 15, color: "var(--text)" }}>
-                            {entry.name}
-                            {isPR && <span style={{ fontSize: 10, fontWeight: 800, color: "#d48a7b", marginLeft: 6 }}>PR!</span>}
-                          </div>
-                          <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{entry.group} · {entry.time}</div>
+                  <Card key={entry.id} style={{ padding: 0, animation: `fadeIn 0.2s ease-out ${i * 30}ms both` }}>
+                    <div style={{ padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+                      <div style={{ flex: 1, cursor: "pointer" }} onClick={() => { setActiveEntry(entry); setWeight(lastWeight(entry.name)); setReps(""); }}>
+                        <div style={{ fontWeight: 700, fontSize: 14 }}>
+                          {entry.name}
+                          {isPR && <span style={{ fontSize: 10, fontWeight: 800, color: "#d48a7b", marginLeft: 6 }}>PR</span>}
+                        </div>
+                        <div style={{ display: "flex", gap: 5, marginTop: 4, flexWrap: "wrap" }}>
+                          {(entry.sets || []).map((s, j) => (
+                            <span key={j} style={{ fontSize: 11, fontWeight: 600, color: "var(--muted)" }}>{s.weight}×{s.reps}</span>
+                          ))}
+                          {(!entry.sets || entry.sets.length === 0) && <span style={{ fontSize: 11, color: "#ccc" }}>No sets</span>}
                         </div>
                       </div>
-                      {entry.sets && entry.sets.length > 0 && (
-                        <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
-                          {entry.sets.map((s, j) => (
-                            <div key={j} style={{ background: "#f5f0e8", borderRadius: 8, padding: "4px 10px", fontSize: 12, fontWeight: 600 }}>
-                              {s.weight && <span>{s.weight}lb</span>}
-                              {s.weight && s.reps && <span> × </span>}
-                              {s.reps && <span>{s.reps}</span>}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      {entry.notes && <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 6 }}>{entry.notes}</div>}
+                      <button onClick={() => deleteExercise(entry.id)} style={{ background: "none", border: "none", color: "var(--muted)", fontSize: 16, cursor: "pointer", padding: 4 }}>✕</button>
                     </div>
                   </Card>
                 );
               })}
             </div>
           )}
+
+          {todayWorkouts.length === 0 && !activeEntry && (
+            <Card style={{ padding: 20, textAlign: "center" }}>
+              <div style={{ fontSize: 13, color: "var(--muted)" }}>No exercises yet. Tap above to start.</div>
+            </Card>
+          )}
         </>
       )}
 
-      {/* ─── STATS SECTION ─── */}
+      {/* ─── STATS ─── */}
       {section === "stats" && (
         <>
           <div style={{ fontFamily: "var(--display)", fontSize: 24, fontWeight: 700, marginBottom: 14 }}>Gym Stats</div>
 
-          {/* Weekly volume chart */}
           <Card style={{ padding: 16, marginBottom: 14 }}>
-            <div style={{ fontSize: 12, fontWeight: 800, color: "var(--muted)", marginBottom: 12, textTransform: "uppercase", letterSpacing: 0.3 }}>Weekly Volume (lbs)</div>
+            <div style={{ fontSize: 12, fontWeight: 800, color: "var(--muted)", marginBottom: 12, textTransform: "uppercase", letterSpacing: 0.3 }}>Weekly Volume</div>
             <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 100 }}>
               {weekData.map(d => {
                 const h = maxVol > 0 ? (d.totalVolume / maxVol) * 100 : 0;
@@ -187,18 +232,12 @@ export default function GymTab({ gymLog, saveGymLog }) {
             </div>
           </Card>
 
-          {/* Weekly activity */}
           <Card style={{ padding: 16, marginBottom: 14 }}>
             <div style={{ fontSize: 12, fontWeight: 800, color: "var(--muted)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.3 }}>Activity</div>
             <div style={{ display: "flex", gap: 8, justifyContent: "space-around" }}>
               {weekData.map(d => (
                 <div key={d.date} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                  <div style={{
-                    width: 28, height: 28, borderRadius: 8,
-                    background: d.entries > 0 ? "linear-gradient(135deg, #6b8e6b, #5a7a5a)" : "#e8dcc8",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: 10, fontWeight: 800, color: d.entries > 0 ? "white" : "var(--muted)",
-                  }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 8, background: d.entries > 0 ? "linear-gradient(135deg, #6b8e6b, #5a7a5a)" : "#e8dcc8", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, color: d.entries > 0 ? "white" : "var(--muted)" }}>
                     {d.entries > 0 ? d.entries : ""}
                   </div>
                   <div style={{ fontSize: 9, fontWeight: 700, color: d.date === today ? "var(--accent)" : "var(--muted)" }}>{d.label}</div>
@@ -207,39 +246,32 @@ export default function GymTab({ gymLog, saveGymLog }) {
             </div>
           </Card>
 
-          {/* PRs */}
-          {uniqueExercises.length > 0 && (
+          {uniqueExercises.filter(n => getPR(n) > 0).length > 0 && (
             <Card style={{ padding: 16, marginBottom: 14 }}>
               <div style={{ fontSize: 12, fontWeight: 800, color: "var(--muted)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.3 }}>Personal Records</div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {uniqueExercises.filter(n => getPR(n) > 0).map(name => {
-                  const progress = getProgress(name);
-                  const pr = getPR(name);
-                  return (
-                    <div key={name}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-                        <span style={{ fontWeight: 700, fontSize: 13 }}>{name}</span>
-                        <span style={{ fontWeight: 800, fontSize: 14, color: "var(--accent)" }}>{pr} lb</span>
-                      </div>
-                      {progress.length > 1 && (
-                        <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 24 }}>
-                          {progress.map((p, i) => {
-                            const maxW = Math.max(...progress.map(x => x.maxWeight));
-                            const h = maxW > 0 ? (p.maxWeight / maxW) * 100 : 0;
-                            return (
-                              <div key={i} style={{ flex: 1, height: `${h}%`, minHeight: 3, borderRadius: 2, background: i === progress.length - 1 ? "var(--accent)" : "#e8dcc8", transition: "height 0.3s ease" }} />
-                            );
-                          })}
-                        </div>
-                      )}
+              {uniqueExercises.filter(n => getPR(n) > 0).map(name => {
+                const progress = getProgress(name);
+                return (
+                  <div key={name} style={{ marginBottom: 10 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
+                      <span style={{ fontWeight: 700, fontSize: 13 }}>{name}</span>
+                      <span style={{ fontWeight: 800, fontSize: 14, color: "var(--accent)" }}>{getPR(name)} lb</span>
                     </div>
-                  );
-                })}
-              </div>
+                    {progress.length > 1 && (
+                      <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 20 }}>
+                        {progress.map((p, i) => {
+                          const maxW = Math.max(...progress.map(x => x.maxWeight));
+                          const h = maxW > 0 ? (p.maxWeight / maxW) * 100 : 0;
+                          return <div key={i} style={{ flex: 1, height: `${h}%`, minHeight: 3, borderRadius: 2, background: i === progress.length - 1 ? "var(--accent)" : "#e8dcc8" }} />;
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </Card>
           )}
 
-          {/* Summary */}
           <Card style={{ padding: 16 }}>
             <div style={{ fontSize: 12, fontWeight: 800, color: "var(--muted)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.3 }}>7-Day Summary</div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -259,55 +291,40 @@ export default function GymTab({ gymLog, saveGymLog }) {
         </>
       )}
 
-      {/* ─── LOG EXERCISE MODAL ─── */}
-      <Modal open={adding} onClose={() => setAdding(false)} title={editingId ? "Edit Exercise" : "Log Exercise"}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {/* Muscle group picker */}
-          <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: 6 }}>Muscle Group</label>
-            <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-              {MUSCLE_GROUPS.map(g => (
-                <button key={g} className={`filter-chip ${exGroup === g ? "active" : ""}`} onClick={() => setExGroup(g)} style={{ fontSize: 11, padding: "5px 10px" }}>{g}</button>
-              ))}
-            </div>
-          </div>
-
-          {/* Exercise name + quick picks */}
-          <div>
-            <input className="cozy-input" placeholder="Exercise name" value={exName} onChange={e => setExName(e.target.value)} />
-            {!exName && COMMON_EXERCISES[exGroup] && (
-              <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginTop: 8 }}>
-                {COMMON_EXERCISES[exGroup].map(ex => (
-                  <button key={ex} className="quick-chip" onClick={() => setExName(ex)} style={{ fontSize: 11, padding: "5px 10px" }}>{ex}</button>
-                ))}
+      {/* ─── EXERCISE PICKER ─── */}
+      <Modal open={picking} onClose={() => setPicking(false)} title="Pick Exercise">
+        <div>
+          {/* Recent */}
+          {recentExercises.length > 0 && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 10, fontWeight: 800, color: "var(--muted)", textTransform: "uppercase", marginBottom: 6 }}>Recent</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {recentExercises.map(name => {
+                  const group = (gymLog || []).find(e => e.name === name)?.group || "";
+                  return (
+                    <button key={name} className="quick-chip" onClick={() => pickExercise(name, group)} style={{ fontSize: 12, padding: "7px 12px" }}>
+                      {name}
+                    </button>
+                  );
+                })}
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
-          {/* Sets */}
-          <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: 6 }}>Sets</label>
-            {sets.map((s, i) => (
-              <div key={i} style={{ display: "flex", gap: 6, marginBottom: 6, alignItems: "center" }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", width: 20 }}>{i + 1}</span>
-                <input className="cozy-input" placeholder="Weight" value={s.weight} onChange={e => updateSet(i, "weight", e.target.value)} inputMode="numeric" style={{ flex: 1 }} />
-                <span style={{ fontSize: 11, color: "var(--muted)" }}>lb ×</span>
-                <input className="cozy-input" placeholder="Reps" value={s.reps} onChange={e => updateSet(i, "reps", e.target.value)} inputMode="numeric" style={{ flex: 1 }} />
-                {sets.length > 1 && (
-                  <button onClick={() => removeSet(i)} style={{ background: "none", border: "none", color: "#c0392b", fontSize: 16, cursor: "pointer", padding: 4 }}>✕</button>
-                )}
+          {/* By muscle group */}
+          <div style={{ maxHeight: "40vh", overflowY: "auto" }}>
+            {MUSCLE_GROUPS.map(group => (
+              <div key={group} style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: "var(--muted)", textTransform: "uppercase", marginBottom: 6 }}>{group}</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {EXERCISES[group].map(ex => (
+                    <button key={ex} className="quick-chip" onClick={() => pickExercise(ex, group)} style={{ fontSize: 12, padding: "7px 12px" }}>
+                      {ex}
+                    </button>
+                  ))}
+                </div>
               </div>
             ))}
-            <button className="cozy-btn secondary" onClick={addSet} style={{ fontSize: 12, padding: "6px 14px" }}>+ Add Set</button>
-          </div>
-
-          <input className="cozy-input" placeholder="Notes (optional)" value={exNotes} onChange={e => setExNotes(e.target.value)} />
-
-          <div style={{ display: "flex", gap: 8 }}>
-            <button className="cozy-btn primary" style={{ flex: 1 }} onClick={saveExercise} disabled={!exName.trim()}>
-              {editingId ? "Update" : "Log"}
-            </button>
-            {editingId && <button className="cozy-btn danger" onClick={() => { deleteExercise(editingId); setAdding(false); }}>Delete</button>}
           </div>
         </div>
       </Modal>
