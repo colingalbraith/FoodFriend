@@ -3,6 +3,7 @@ import { CATEGORIES, CATEGORY_COLORS } from "../../constants/categories";
 import { DEFAULT_STAPLES } from "../../constants/storage";
 import { daysUntil, expiryBadge } from "../../utils/dateHelpers";
 import { autoExpiry, makeId } from "../../utils/itemHelpers";
+import { getFoodEmoji } from "../../constants/foodEmoji";
 import Badge from "../ui/Badge";
 import Modal from "../ui/Modal";
 import QuickAddPanel from "./QuickAddPanel";
@@ -22,6 +23,7 @@ export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStoc
   const [dragging, setDragging] = useState(false);
   const touchRef = useRef({ startX: 0, startY: 0, locked: null });
   const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedPantryItem, setSelectedPantryItem] = useState(null);
 
   const view = VIEWS[viewIdx];
 
@@ -98,7 +100,7 @@ export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStoc
             <FridgeView items={items} onItemTap={setSelectedItem} />
           </div>
           <div style={{ width: `${100 / paneCount}%`, flexShrink: 0 }}>
-            <PantryView staples={staples} />
+            <PantryView staples={staples} onItemTap={setSelectedPantryItem} />
           </div>
           <div style={{ width: `${100 / paneCount}%`, flexShrink: 0, padding: "0 4px" }}>
             <OverviewTab items={items} saveItems={saveItems} lowStockItems={lowStockItems} saveLowStock={saveLowStock}
@@ -121,22 +123,27 @@ export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStoc
       {/* Spacer pushes buttons to bottom */}
       {view !== "overview" && <div style={{ flex: 1 }} />}
 
-      {/* Add buttons — pinned to bottom on fridge/pantry */}
-      {view !== "overview" && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8, paddingBottom: 8 }}>
-          {[
-            { id: "quick", label: "Quick Add" },
-            { id: "manual", label: "Manual" },
-            { id: "scan", label: "Scan Barcode" },
-            { id: "receipt", label: "Scan Receipt" },
-          ].map((m, i) => (
-            <button key={m.id} className="add-method-btn" onClick={() => setAddMode(m.id)}
-              style={{ animation: `popIn 0.3s ease-out ${i * 50}ms both` }}>
-              <span style={{ fontSize: 11, fontWeight: 700 }}>{m.label}</span>
-            </button>
-          ))}
-        </div>
-      )}
+      {/* Add buttons — pinned to bottom, animated in/out */}
+      <div style={{
+        display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8, paddingBottom: 8,
+        opacity: view === "overview" ? 0 : 1,
+        transform: view === "overview" ? "translateY(20px)" : "translateY(0)",
+        maxHeight: view === "overview" ? 0 : 200,
+        overflow: "hidden",
+        transition: "opacity 0.3s ease, transform 0.3s ease, max-height 0.3s ease",
+        pointerEvents: view === "overview" ? "none" : "auto",
+      }}>
+        {[
+          { id: "quick", label: "Quick Add" },
+          { id: "manual", label: "Manual" },
+          { id: "scan", label: "Scan Barcode" },
+          { id: "receipt", label: "Scan Receipt" },
+        ].map((m) => (
+          <button key={m.id} className="add-method-btn" onClick={() => setAddMode(m.id)}>
+            <span style={{ fontSize: 11, fontWeight: 700 }}>{m.label}</span>
+          </button>
+        ))}
+      </div>
 
       {/* Add modals */}
       <Modal open={addMode === "quick"} onClose={() => setAddMode(null)} title="Quick Add">
@@ -218,6 +225,33 @@ export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStoc
             </div>
           );
         })()}
+      </Modal>
+
+      {/* Pantry item detail popup */}
+      <Modal open={!!selectedPantryItem} onClose={() => setSelectedPantryItem(null)} title={selectedPantryItem?.name || ""}>
+        {selectedPantryItem && (
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: 56, marginBottom: 12 }}>{getFoodEmoji(selectedPantryItem.name)}</div>
+            <div style={{
+              display: "inline-block", padding: "6px 16px", borderRadius: 20, fontSize: 13, fontWeight: 700,
+              background: selectedPantryItem.inStock ? "linear-gradient(135deg, #e4f2e4, #edf5ed)" : "#fef3e2",
+              color: selectedPantryItem.inStock ? "#3d6e3d" : "#8b6d30",
+              marginBottom: 16,
+            }}>
+              {selectedPantryItem.inStock ? "In Stock" : "Out of Stock"}
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button className="cozy-btn primary" style={{ flex: 1, justifyContent: "center" }}
+                onClick={() => {
+                  const s = staples || Object.fromEntries(DEFAULT_STAPLES.map(n => [n, true]));
+                  saveStaples({ ...s, [selectedPantryItem.name]: !selectedPantryItem.inStock });
+                  setSelectedPantryItem(null);
+                }}>
+                {selectedPantryItem.inStock ? "Mark Out of Stock" : "Mark In Stock"}
+              </button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );
