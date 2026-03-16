@@ -23,6 +23,7 @@ export default function OverviewTab({ items, saveItems, lowStockItems, saveLowSt
   const [pantryFilter, setPantryFilter] = useState("all");
   const [pantryEditing, setPantryEditing] = useState(false);
   const [newStaple, setNewStaple] = useState("");
+  const [pantryLimit, setPantryLimit] = useState(5);
 
   // ─── Fridge logic ───
   function removeItem(id) { saveItems(items.filter(i => i.id !== id)); }
@@ -181,7 +182,7 @@ export default function OverviewTab({ items, saveItems, lowStockItems, saveLowSt
               { id: "needed", label: `Need (${outCount})` },
             ].map(f => (
               <button key={f.id} className={`filter-chip ${pantryFilter === f.id ? "active" : ""}`}
-                onClick={() => setPantryFilter(f.id)} style={{ fontSize: 11, padding: "5px 10px", minHeight: 28 }}>{f.label}</button>
+                onClick={() => { setPantryFilter(f.id); setPantryLimit(5); }} style={{ fontSize: 11, padding: "5px 10px", minHeight: 28 }}>{f.label}</button>
             ))}
             <button className={`filter-chip ${pantryEditing ? "active" : ""}`}
               onClick={() => setPantryEditing(!pantryEditing)}
@@ -203,7 +204,7 @@ export default function OverviewTab({ items, saveItems, lowStockItems, saveLowSt
           {/* Staples list (card rows matching fridge style) */}
           {pantryFiltered.length > 0 ? (
             <Card style={{ padding: 6 }}>
-              {pantryFiltered.map((s, idx) => (
+              {pantryFiltered.slice(0, pantryLimit).map((s, idx) => (
                 <div key={s.name} style={{
                   borderBottom: idx < pantryFiltered.length - 1 ? "1px solid #f0e6d6" : "none",
                   animation: `fadeIn 0.3s ease-out ${idx * 20}ms both`,
@@ -249,8 +250,13 @@ export default function OverviewTab({ items, saveItems, lowStockItems, saveLowSt
               </div>
             </Card>
           )}
+          {pantryFiltered.length > pantryLimit && (
+            <button className="cozy-btn secondary full" onClick={() => setPantryLimit(l => l + 5)} style={{ marginTop: 8, fontSize: 12 }}>
+              Show More ({pantryFiltered.length - pantryLimit} remaining)
+            </button>
+          )}
           <div style={{ textAlign: "center", marginTop: 10, fontSize: 11, color: "var(--muted)" }}>
-            Tap to toggle · {pantryFiltered.length} shown
+            Tap to toggle · {Math.min(pantryLimit, pantryFiltered.length)} of {pantryFiltered.length} shown
           </div>
 
           {/* Add needed to shopping list */}
