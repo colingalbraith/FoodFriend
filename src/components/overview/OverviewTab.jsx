@@ -3,6 +3,7 @@ import { CATEGORIES, CATEGORY_COLORS } from "../../constants/categories";
 import { DEFAULT_STAPLES } from "../../constants/storage";
 import { daysUntil, expiryBadge } from "../../utils/dateHelpers";
 import { makeId } from "../../utils/itemHelpers";
+import { getFoodEmoji } from "../../constants/foodEmoji";
 import Badge from "../ui/Badge";
 import Card from "../ui/Card";
 import Modal from "../ui/Modal";
@@ -199,45 +200,57 @@ export default function OverviewTab({ items, saveItems, lowStockItems, saveLowSt
             </div>
           )}
 
-          {/* Pill toggles */}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
-            {pantryFiltered.map((s, i) => (
-              <button key={s.name} onClick={() => !pantryEditing && toggleStaple(s.name)}
-                style={{
-                  display: "inline-flex", alignItems: "center", gap: 6,
-                  padding: pantryEditing ? "8px 10px 8px 14px" : "9px 14px", borderRadius: 20, border: "none",
-                  background: pantryEditing ? "var(--card)" : s.inStock ? "linear-gradient(135deg, #e4f2e4, #edf5ed)" : "#f5f0e8",
-                  color: pantryEditing ? "var(--text)" : s.inStock ? "#3d6e3d" : "var(--muted)",
-                  fontFamily: "var(--body)", fontSize: 13, fontWeight: 600, cursor: "pointer",
-                  transition: "all 0.2s ease", opacity: pantryEditing ? 1 : s.inStock ? 1 : 0.55,
-                  WebkitTapHighlightColor: "transparent",
-                  boxShadow: !pantryEditing && s.inStock ? "0 1px 4px rgba(107,142,107,0.15)" : "0 1px 3px rgba(0,0,0,0.04)",
-                  animation: `popIn 0.2s ease-out ${i * 15}ms both`,
+          {/* Staples list (card rows matching fridge style) */}
+          {pantryFiltered.length > 0 ? (
+            <Card style={{ padding: 6 }}>
+              {pantryFiltered.map((s, idx) => (
+                <div key={s.name} style={{
+                  borderBottom: idx < pantryFiltered.length - 1 ? "1px solid #f0e6d6" : "none",
+                  animation: `fadeIn 0.3s ease-out ${idx * 20}ms both`,
                 }}>
-                {!pantryEditing && (
-                  <div style={{
-                    width: 18, height: 18, borderRadius: 6,
-                    border: `2px solid ${s.inStock ? "#6b8e6b" : "#ccc"}`,
-                    background: s.inStock ? "#6b8e6b" : "transparent",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    transition: "all 0.2s ease", flexShrink: 0,
-                  }}>
-                    {s.inStock && <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                  <div className="item-row" onClick={() => !pantryEditing && toggleStaple(s.name)}
+                    style={{ opacity: s.inStock ? 1 : 0.55, cursor: "pointer" }}>
+                    {/* Checkbox */}
+                    <div style={{
+                      width: 22, height: 22, borderRadius: 7, flexShrink: 0,
+                      border: `2px solid ${s.inStock ? "#6b8e6b" : "#ccc"}`,
+                      background: s.inStock ? "#6b8e6b" : "transparent",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      transition: "all 0.2s ease",
+                    }}>
+                      {s.inStock && <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{
+                        fontWeight: 700, fontSize: 14, lineHeight: 1.2,
+                        textDecoration: !s.inStock ? "line-through" : "none",
+                        color: s.inStock ? "var(--text)" : "var(--muted)",
+                      }}>{s.name}</div>
+                    </div>
+                    <span style={{
+                      fontSize: 12, fontWeight: 700,
+                      color: s.inStock ? "#4a7a4a" : "#b8860b",
+                    }}>
+                      {s.inStock ? "Stocked" : "Need"}
+                    </span>
+                    {pantryEditing && (
+                      <button onClick={(e) => { e.stopPropagation(); removeStaple(s.name); }}
+                        style={{ width: 28, height: 28, borderRadius: 14, border: "none", background: "#fde8e8", color: "#c0392b",
+                          display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800, cursor: "pointer", flexShrink: 0, marginLeft: 4 }}>✕</button>
+                    )}
                   </div>
-                )}
-                <span style={{ textDecoration: !pantryEditing && !s.inStock ? "line-through" : "none" }}>{s.name}</span>
-                {pantryEditing && (
-                  <span onClick={(e) => { e.stopPropagation(); removeStaple(s.name); }}
-                    style={{ width: 20, height: 20, borderRadius: 10, background: "#fde8e8", color: "#c0392b",
-                      display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, flexShrink: 0 }}>✕</span>
-                )}
-              </button>
-            ))}
-            {pantryFiltered.length === 0 && (
-              <div style={{ width: "100%", textAlign: "center", padding: 20, fontSize: 13, color: "var(--muted)" }}>
+                </div>
+              ))}
+            </Card>
+          ) : (
+            <Card style={{ padding: 20, textAlign: "center" }}>
+              <div style={{ fontSize: 13, color: "var(--muted)" }}>
                 {pantryFilter === "needed" ? "All stocked up!" : "No staples yet"}
               </div>
-            )}
+            </Card>
+          )}
+          <div style={{ textAlign: "center", marginTop: 10, fontSize: 11, color: "var(--muted)" }}>
+            Tap to toggle · {pantryFiltered.length} shown
           </div>
 
           {/* Add needed to shopping list */}
