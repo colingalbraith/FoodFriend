@@ -21,8 +21,8 @@ export default function PantryView({ staples }) {
   allItems.forEach((item, i) => { shelves[i % 4].push(item); });
 
   return (
-    <div style={{ marginBottom: 20, animation: "popIn 0.5s ease-out" }}>
-      <div style={{ position: "relative", width: "100%", maxWidth: 240, margin: "0 auto", aspectRatio: "5 / 7" }}>
+    <div style={{ marginBottom: 10, animation: "popIn 0.5s ease-out" }}>
+      <div style={{ position: "relative", width: "100%", maxWidth: 200, margin: "0 auto", aspectRatio: "5 / 7" }}>
         <div style={{ position: "absolute", bottom: -6, left: "10%", right: "10%", height: 12, background: "radial-gradient(ellipse, rgba(101,67,33,0.15) 0%, transparent 70%)", borderRadius: "50%" }} />
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(170deg, #8B6914 0%, #6B4F12 40%, #5A3E10 100%)", borderRadius: 22, boxShadow: "0 6px 24px rgba(101,67,33,0.25), inset 0 1px 0 rgba(255,255,255,0.15)" }} />
         <div style={{ position: "absolute", top: 7, left: 7, right: 7, bottom: 7, background: "linear-gradient(180deg, #f5e6d0 0%, #efe0c8 50%, #e8d4b8 100%)", borderRadius: 16, display: "flex", flexDirection: "column", overflow: "hidden" }}>
@@ -40,7 +40,7 @@ export default function PantryView({ staples }) {
           <div style={{ position: "absolute", top: -5, left: "50%", transform: "translateX(-50%)", width: "80%", height: 35, background: "radial-gradient(ellipse, rgba(255,240,210,0.7) 0%, transparent 70%)", pointerEvents: "none" }} />
         </div>
       </div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 8 }}>
         <div style={{ width: 60, height: 5, borderRadius: 3, background: "#d4c4a8", overflow: "hidden" }}>
           <div style={{ height: "100%", borderRadius: 3, width: `${fullness * 100}%`, background: fullness > 0.8 ? "#6b8e6b" : fullness > 0.5 ? "#c4a86a" : "#d48a7b", transition: "width 0.6s ease-out" }} />
         </div>

@@ -156,7 +156,7 @@ export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStoc
       </div>
 
       {/* Swipe indicator dots */}
-      <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 10, marginBottom: 14 }}>
+      <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 6, marginBottom: 10 }}>
         <div style={{ width: 6, height: 6, borderRadius: 3, background: view === "fridge" ? "var(--accent)" : "#ddd", transition: "background 0.25s" }} />
         <div style={{ width: 6, height: 6, borderRadius: 3, background: view === "pantry" ? "var(--accent)" : "#ddd", transition: "background 0.25s" }} />
       </div>
@@ -165,7 +165,7 @@ export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStoc
       {view === "fridge" && (
         <>
           {/* Add buttons */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8, marginBottom: 14 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8, marginBottom: 10 }}>
             {[
               { id: "quick", label: "Quick Add" },
               { id: "manual", label: "Manual" },

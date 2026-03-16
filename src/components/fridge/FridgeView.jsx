@@ -110,11 +110,11 @@ export default function FridgeView({ items }) {
   const isEmpty = items.length === 0;
 
   return (
-    <div style={{ marginBottom: 20, animation: "popIn 0.5s ease-out" }}>
+    <div style={{ marginBottom: 10, animation: "popIn 0.5s ease-out" }}>
       <div style={{
         position: "relative",
         width: "100%",
-        maxWidth: 240,
+        maxWidth: 200,
         margin: "0 auto",
         aspectRatio: "5 / 7",
       }}>
@@ -201,7 +201,7 @@ export default function FridgeView({ items }) {
       </div>
 
       {/* Fullness */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 8 }}>
         <div style={{ width: 60, height: 5, borderRadius: 3, background: "#e8dcc8", overflow: "hidden" }}>
           <div style={{
             height: "100%", borderRadius: 3,
