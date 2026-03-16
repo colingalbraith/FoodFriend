@@ -26,12 +26,6 @@ const TAB_ICONS = {
       <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" /><rect x="9" y="3" width="6" height="4" rx="1" /><line x1="9" y1="12" x2="15" y2="12" /><line x1="9" y1="16" x2="13" y2="16" />
     </svg>
   ),
-  chef: (active) => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? "var(--text)" : "var(--muted)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 3a4 4 0 0 0-4 4c0 .5.1 1 .3 1.4A3.5 3.5 0 0 0 5 12a3.5 3.5 0 0 0 3 3.5V20h8v-4.5a3.5 3.5 0 0 0 3-3.5 3.5 3.5 0 0 0-3.3-3.6c.2-.4.3-.9.3-1.4a4 4 0 0 0-4-4z" />
-      <line x1="8" y1="20" x2="16" y2="20" />
-    </svg>
-  ),
   gym: (active) => (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? "var(--text)" : "var(--muted)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M6.5 6.5a2 2 0 0 1 3 0V17.5a2 2 0 0 1-3 0zM14.5 6.5a2 2 0 0 1 3 0V17.5a2 2 0 0 1-3 0z" />
@@ -189,9 +183,8 @@ export default function FridgeFriend() {
         {/* Tab content */}
         <main className="app-main">
           {tab === "fridge" && <FridgeTab items={items} saveItems={saveItems} lowStockItems={lowStockItems} saveLowStock={saveLowStock} staples={staples} saveStaples={saveStaples} shopping={shopping} saveShopping={saveShopping} />}
-          {tab === "meals" && <MealPlanTab meals={meals} saveMeals={saveMeals} items={items} recurring={recurring} saveRecurring={saveRecurring} recipes={recipes} macroLog={macroLog} saveMacroLog={saveMacroLog} macroGoals={macroGoals} saveMacroGoals={saveMacroGoals} bodyWeight={bodyWeight} saveBodyWeight={saveBodyWeight} userProfile={userProfile} />}
+          {tab === "meals" && <MealPlanTab meals={meals} saveMeals={saveMeals} items={items} recurring={recurring} saveRecurring={saveRecurring} recipes={recipes} saveRecipes={saveRecipes} macroLog={macroLog} saveMacroLog={saveMacroLog} macroGoals={macroGoals} saveMacroGoals={saveMacroGoals} bodyWeight={bodyWeight} saveBodyWeight={saveBodyWeight} userProfile={userProfile} shopping={shopping} saveShopping={saveShopping} />}
           {tab === "shopping" && <ShoppingTab list={shopping} saveList={saveShopping} items={items} />}
-          {tab === "chef" && <ChefTab items={items} saveMeals={saveMeals} meals={meals} recipes={recipes} saveRecipes={saveRecipes} shopping={shopping} saveShopping={saveShopping} />}
           {tab === "gym" && <GymTab gymLog={gymLog} saveGymLog={saveGymLog} />}
           {tab === "settings" && <SettingsTab userProfile={userProfile} saveUserProfile={saveUserProfile} macroGoals={macroGoals} saveMacroGoals={saveMacroGoals} />}
         </main>
