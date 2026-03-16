@@ -68,6 +68,7 @@ export default function Onboarding({ onComplete }) {
   const [goalWeight, setGoalWeight] = useState("");
   const [goal, setGoal] = useState("");
   const [activity, setActivity] = useState("");
+  const [split, setSplit] = useState("");
   const [restrictions, setRestrictions] = useState([]);
 
   function next() { setDir(1); setAnimKey(k => k + 1); setStep(s => Math.min(s + 1, TOTAL_STEPS)); }
@@ -99,7 +100,7 @@ export default function Onboarding({ onComplete }) {
     }
 
     onComplete({
-      profile: { name, age, sex, heightFt, heightIn, weight, goalWeight, goal, activity, experience: "", split: "", daysPerWeek: "", restrictions },
+      profile: { name, age, sex, heightFt, heightIn, weight, goalWeight, goal, activity, experience: "", split, daysPerWeek: "", restrictions },
       macroGoals,
     });
   }
@@ -256,25 +257,37 @@ export default function Onboarding({ onComplete }) {
           <div key={animKey} style={{ animation: `${slideAnim} 0.35s ease-out` }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>🎯</div>
             <h2 style={{ fontFamily: "var(--display)", fontSize: 32, fontWeight: 700, marginBottom: 4 }}>Your goal</h2>
-            <p style={{ fontSize: 14, color: "var(--muted)", marginBottom: 28 }}>We'll tailor your calorie & protein targets.</p>
+            <p style={{ fontSize: 14, color: "var(--muted)", marginBottom: 24 }}>We'll tailor your calorie & protein targets.</p>
 
-            <div style={{ marginBottom: 24 }}>
+            <div style={{ marginBottom: 20 }}>
               <label style={labelStyle}>What's the goal?</label>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                 {GOAL_OPTIONS.map((g, i) => (
                   <button key={g} className={`filter-chip ${goal === g ? "active" : ""}`} onClick={() => setGoal(g)}
-                    style={{ padding: "14px 18px", fontSize: 14, justifyContent: "center", animation: `fadeIn 0.3s ease-out ${i * 60}ms both` }}>
+                    style={{ padding: "12px 10px", fontSize: 13, justifyContent: "center", animation: `fadeIn 0.3s ease-out ${i * 60}ms both` }}>
                     {g === "Lose Weight" && "🔥 "}{g === "Maintain" && "⚖️ "}{g === "Build Muscle" && "💪 "}{g === "Body Recomp" && "🔄 "}{g}
                   </button>
                 ))}
               </div>
             </div>
 
-            <div>
+            <div style={{ marginBottom: 20 }}>
               <label style={labelStyle}>Activity Level</label>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 5 }}>
                 {ACTIVITY_OPTIONS.map(a => (
-                  <button key={a} className={`filter-chip ${activity === a ? "active" : ""}`} onClick={() => setActivity(a)} style={{ fontSize: 12 }}>{a}</button>
+                  <button key={a} className={`filter-chip ${activity === a ? "active" : ""}`} onClick={() => setActivity(a)} style={{ fontSize: 10, padding: "8px 4px", justifyContent: "center", minHeight: 34 }}>{a}</button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label style={labelStyle}>Preferred Split</label>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                {["Push/Pull/Legs", "Upper/Lower", "Full Body", "Bro Split"].map((s, i) => (
+                  <button key={s} className={`filter-chip ${split === s ? "active" : ""}`} onClick={() => setSplit(s)}
+                    style={{ padding: "12px 10px", fontSize: 13, justifyContent: "center", animation: `fadeIn 0.3s ease-out ${i * 60}ms both` }}>
+                    {s}
+                  </button>
                 ))}
               </div>
             </div>
