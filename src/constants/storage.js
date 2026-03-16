@@ -16,6 +16,7 @@ export const STORAGE_KEYS = {
   gymLog: "ff2-gymlog",
   bodyWeight: "ff2-bodyweight",
   userProfile: "ff2-userprofile",
+  workoutTemplates: "ff2-templates",
 };
 
 export const DEFAULT_RECIPES = [

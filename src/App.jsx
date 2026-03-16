@@ -6,9 +6,10 @@ import { globalStyles } from "./styles/global";
 import FridgeTab from "./components/fridge/FridgeTab";
 import MealPlanTab from "./components/meals/MealPlanTab";
 import ShoppingTab from "./components/shopping/ShoppingTab";
-import ChefTab from "./components/chef/ChefTab";
 import GymTab from "./components/gym/GymTab";
 import SettingsTab from "./components/settings/SettingsTab";
+import ErrorBoundary from "./components/ui/ErrorBoundary";
+import Toast from "./components/ui/Toast";
 
 const TAB_ICONS = {
   fridge: (active) => (
@@ -55,7 +56,14 @@ export default function FridgeFriend() {
   const [gymLog, setGymLog] = useState([]);
   const [bodyWeight, setBodyWeight] = useState([]);
   const [userProfile, setUserProfile] = useState(null);
+  const [workoutTemplates, setWorkoutTemplates] = useState([]);
+  const [toast, setToast] = useState(null);
   const [loaded, setLoaded] = useState(false);
+
+  const showToast = useCallback((message, undoFn) => {
+    setToast({ message, undoFn, key: Date.now() });
+  }, []);
+  const dismissToast = useCallback(() => setToast(null), []);
 
   useEffect(() => {
     (async () => {
@@ -93,6 +101,8 @@ export default function FridgeFriend() {
         if (k?.value) setBodyWeight(JSON.parse(k.value));
         const l = await window.storage.get(STORAGE_KEYS.userProfile).catch(() => null);
         if (l?.value) setUserProfile(JSON.parse(l.value));
+        const m = await window.storage.get(STORAGE_KEYS.workoutTemplates).catch(() => null);
+        if (m?.value) setWorkoutTemplates(JSON.parse(m.value));
       } catch (e) { console.error(e); }
       setLoaded(true);
     })();
@@ -122,6 +132,7 @@ export default function FridgeFriend() {
   const saveGymLog = save(STORAGE_KEYS.gymLog, setGymLog);
   const saveBodyWeight = save(STORAGE_KEYS.bodyWeight, setBodyWeight);
   const saveUserProfile = save(STORAGE_KEYS.userProfile, setUserProfile);
+  const saveWorkoutTemplates = save(STORAGE_KEYS.workoutTemplates, setWorkoutTemplates);
 
   const expiringSoon = items.filter(i => { const d = daysUntil(i.expiry); return d >= 0 && d <= 3; }).length;
   const expired = items.filter(i => daysUntil(i.expiry) < 0).length;
@@ -143,22 +154,24 @@ export default function FridgeFriend() {
   }
 
   return (
+    <ErrorBoundary>
     <div className="app-shell">
       <style>{globalStyles}</style>
 
+      {/* Toast notifications */}
+      {toast && (
+        <Toast
+          key={toast.key}
+          message={toast.message}
+          onUndo={toast.undoFn ? () => { toast.undoFn(); dismissToast(); } : null}
+          onDismiss={dismissToast}
+        />
+      )}
+
       {/* Scrollable content area */}
       <div className="app-content">
-        {/* Header */}
-        <header className="app-header">
-          <div>
-            <h1 style={{ fontFamily: "var(--display)", fontSize: 28, fontWeight: 700, color: "var(--text)", margin: 0 }}>
-              Stockd
-            </h1>
-            <p style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600, marginTop: 2 }}>
-              {items.length} items{expiringSoon > 0 && ` · ${expiringSoon} expiring soon`}{expired > 0 && ` · ${expired} expired`}
-            </p>
-          </div>
-        </header>
+        {/* Spacer for top padding */}
+        <div style={{ height: 16 }} />
 
         {/* Alerts */}
         <div className="app-alerts">
@@ -190,11 +203,11 @@ export default function FridgeFriend() {
 
         {/* Tab content */}
         <main className="app-main">
-          {tab === "fridge" && <FridgeTab items={items} saveItems={saveItems} lowStockItems={lowStockItems} saveLowStock={saveLowStock} staples={staples} saveStaples={saveStaples} shopping={shopping} saveShopping={saveShopping} />}
-          {tab === "meals" && <MealPlanTab meals={meals} saveMeals={saveMeals} items={items} recurring={recurring} saveRecurring={saveRecurring} recipes={allRecipes} saveRecipes={saveUserRecipes} macroLog={macroLog} saveMacroLog={saveMacroLog} macroGoals={macroGoals} saveMacroGoals={saveMacroGoals} userProfile={userProfile} shopping={shopping} saveShopping={saveShopping} />}
+          {tab === "fridge" && <FridgeTab items={items} saveItems={saveItems} lowStockItems={lowStockItems} saveLowStock={saveLowStock} staples={staples} saveStaples={saveStaples} shopping={shopping} saveShopping={saveShopping} showToast={showToast} />}
+          {tab === "meals" && <MealPlanTab meals={meals} saveMeals={saveMeals} items={items} saveItems={saveItems} recurring={recurring} saveRecurring={saveRecurring} recipes={allRecipes} saveRecipes={saveUserRecipes} macroLog={macroLog} saveMacroLog={saveMacroLog} macroGoals={macroGoals} saveMacroGoals={saveMacroGoals} userProfile={userProfile} shopping={shopping} saveShopping={saveShopping} showToast={showToast} />}
           {tab === "shopping" && <ShoppingTab list={shopping} saveList={saveShopping} items={items} />}
-          {tab === "gym" && <GymTab gymLog={gymLog} saveGymLog={saveGymLog} bodyWeight={bodyWeight} saveBodyWeight={saveBodyWeight} />}
-          {tab === "settings" && <SettingsTab userProfile={userProfile} saveUserProfile={saveUserProfile} macroGoals={macroGoals} saveMacroGoals={saveMacroGoals} />}
+          {tab === "gym" && <GymTab gymLog={gymLog} saveGymLog={saveGymLog} bodyWeight={bodyWeight} saveBodyWeight={saveBodyWeight} workoutTemplates={workoutTemplates} saveWorkoutTemplates={saveWorkoutTemplates} />}
+          {tab === "settings" && <SettingsTab userProfile={userProfile} saveUserProfile={saveUserProfile} macroGoals={macroGoals} saveMacroGoals={saveMacroGoals} bodyWeight={bodyWeight} showToast={showToast} />}
         </main>
       </div>
 
@@ -218,5 +231,6 @@ export default function FridgeFriend() {
         })}
       </nav>
     </div>
+    </ErrorBoundary>
   );
 }

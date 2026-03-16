@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { CATEGORIES, CATEGORY_COLORS } from "../../constants/categories";
 import { DEFAULT_STAPLES } from "../../constants/storage";
 import { daysUntil, expiryBadge } from "../../utils/dateHelpers";
@@ -14,10 +14,44 @@ import ReceiptScanPanel from "./ReceiptScanPanel";
 import FridgeView from "./FridgeView";
 import PantryView from "./PantryView";
 
-export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStock, staples, saveStaples, shopping, saveShopping }) {
+export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStock, staples, saveStaples, shopping, saveShopping, showToast }) {
   const [addMode, setAddMode] = useState(null);
   const [view, setView] = useState("fridge"); // "fridge" | "pantry"
+  const [dragX, setDragX] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const touchRef = useRef({ startX: 0, startY: 0, locked: null });
   const [filter, setFilter] = useState("All");
+
+  const onTouchStart = useCallback((e) => {
+    touchRef.current = { startX: e.touches[0].clientX, startY: e.touches[0].clientY, locked: null };
+    setDragging(true);
+  }, []);
+
+  const onTouchMove = useCallback((e) => {
+    const dx = e.touches[0].clientX - touchRef.current.startX;
+    const dy = e.touches[0].clientY - touchRef.current.startY;
+    // Lock direction on first significant move
+    if (touchRef.current.locked === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+      touchRef.current.locked = Math.abs(dx) > Math.abs(dy) ? "h" : "v";
+    }
+    if (touchRef.current.locked !== "h") return;
+    e.preventDefault();
+    // Clamp: don't let user drag past edges (add rubber-band feel)
+    let clamped = dx;
+    if (view === "fridge" && dx > 0) clamped = dx * 0.3; // resist right on fridge
+    if (view === "pantry" && dx < 0) clamped = dx * 0.3;  // resist left on pantry
+    setDragX(clamped);
+  }, [view]);
+
+  const onTouchEnd = useCallback(() => {
+    setDragging(false);
+    if (touchRef.current.locked === "h") {
+      if (dragX < -50 && view === "fridge") setView("pantry");
+      else if (dragX > 50 && view === "pantry") setView("fridge");
+    }
+    setDragX(0);
+    touchRef.current.locked = null;
+  }, [dragX, view]);
   const [swipedId, setSwipedId] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [editName, setEditName] = useState("");
@@ -43,12 +77,26 @@ export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStoc
   function removeItem(id) { saveItems(items.filter(i => i.id !== id)); }
   function useUpItem(id) {
     const item = items.find(i => i.id === id);
-    if (item && !lowStockItems.includes(item.name)) {
+    if (!item) return;
+    const prevItems = items;
+    const prevLow = lowStockItems;
+    if (!lowStockItems.includes(item.name)) {
       saveLowStock([...lowStockItems, item.name]);
     }
     removeItem(id);
+    showToast?.(`Marked "${item.name}" as used`, () => {
+      saveItems(prevItems);
+      saveLowStock(prevLow);
+    });
   }
-  function tossItem(id) { removeItem(id); }
+  function tossItem(id) {
+    const item = items.find(i => i.id === id);
+    const prevItems = items;
+    removeItem(id);
+    showToast?.(`Tossed "${item?.name || "item"}"`, () => {
+      saveItems(prevItems);
+    });
+  }
 
   function openEditItem(item) {
     setEditingItem(item.id);
@@ -85,13 +133,39 @@ export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStoc
   return (
     <div style={{ animation: "fadeIn 0.3s ease-out" }}>
       {/* View toggle */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 14, justifyContent: "center" }}>
+      <div style={{ display: "flex", gap: 6, marginBottom: 10, justifyContent: "center" }}>
         <button className={`filter-chip ${view === "fridge" ? "active" : ""}`} onClick={() => setView("fridge")}>Fridge</button>
         <button className={`filter-chip ${view === "pantry" ? "active" : ""}`} onClick={() => setView("pantry")}>Pantry</button>
       </div>
 
-      {view === "fridge" && <FridgeView items={items} />}
-      {view === "pantry" && <PantryView staples={staples} />}
+      {/* Swipe indicator dots */}
+      <div style={{ display: "flex", gap: 6, justifyContent: "center", marginBottom: 12 }}>
+        <div style={{ width: 6, height: 6, borderRadius: 3, background: view === "fridge" ? "var(--accent)" : "#ddd", transition: "background 0.25s" }} />
+        <div style={{ width: 6, height: 6, borderRadius: 3, background: view === "pantry" ? "var(--accent)" : "#ddd", transition: "background 0.25s" }} />
+      </div>
+
+      {/* Swipeable pane */}
+      <div
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        style={{ overflow: "hidden", marginBottom: 14 }}
+      >
+        <div style={{
+          display: "flex",
+          width: "200%",
+          transform: `translateX(calc(${view === "pantry" ? "-50%" : "0%"} + ${dragX}px))`,
+          transition: dragging ? "none" : "transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)",
+          willChange: "transform",
+        }}>
+          <div style={{ width: "50%", flexShrink: 0 }}>
+            <FridgeView items={items} />
+          </div>
+          <div style={{ width: "50%", flexShrink: 0 }}>
+            <PantryView staples={staples} />
+          </div>
+        </div>
+      </div>
 
       {/* Add buttons */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8, marginBottom: 14 }}>

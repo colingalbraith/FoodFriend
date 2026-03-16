@@ -78,6 +78,262 @@ const EXERCISES = {
 
 const GROUP_COLORS = { Chest: "#d48a7b", Back: "#8ab4d4", Shoulders: "#c4a86a", Arms: "#b89878", Legs: "#7cb87c", Core: "#d4a87b", Cardio: "#8ac4a8" };
 
+// ─── Preset workout programs ───────────────────────────────────────────
+const PRESET_PROGRAMS = [
+  {
+    name: "Push / Pull / Legs",
+    tag: "PPL",
+    days: [
+      {
+        name: "Push Day",
+        groups: ["Chest", "Shoulders", "Arms"],
+        exercises: [
+          { name: "Bench Press", group: "Chest" },
+          { name: "Incline Dumbbell Press", group: "Chest" },
+          { name: "Cable Flyes", group: "Chest" },
+          { name: "Overhead Press", group: "Shoulders" },
+          { name: "Lateral Raise", group: "Shoulders" },
+          { name: "Tricep Pushdown", group: "Arms" },
+          { name: "Overhead Tricep Extension", group: "Arms" },
+        ],
+      },
+      {
+        name: "Pull Day",
+        groups: ["Back", "Arms"],
+        exercises: [
+          { name: "Deadlift", group: "Back" },
+          { name: "Pull-ups", group: "Back" },
+          { name: "Barbell Row", group: "Back" },
+          { name: "Seated Cable Row", group: "Back" },
+          { name: "Face Pull", group: "Shoulders" },
+          { name: "Barbell Curl", group: "Arms" },
+          { name: "Hammer Curl", group: "Arms" },
+        ],
+      },
+      {
+        name: "Leg Day",
+        groups: ["Legs", "Core"],
+        exercises: [
+          { name: "Back Squat", group: "Legs" },
+          { name: "Romanian Deadlift", group: "Legs" },
+          { name: "Leg Press", group: "Legs" },
+          { name: "Leg Extension", group: "Legs" },
+          { name: "Leg Curl", group: "Legs" },
+          { name: "Standing Calf Raise", group: "Legs" },
+          { name: "Hanging Leg Raise", group: "Core" },
+        ],
+      },
+    ],
+  },
+  {
+    name: "Upper / Lower",
+    tag: "U/L",
+    days: [
+      {
+        name: "Upper A — Strength",
+        groups: ["Chest", "Back", "Shoulders", "Arms"],
+        exercises: [
+          { name: "Bench Press", group: "Chest" },
+          { name: "Barbell Row", group: "Back" },
+          { name: "Overhead Press", group: "Shoulders" },
+          { name: "Pull-ups", group: "Back" },
+          { name: "Dumbbell Curl", group: "Arms" },
+          { name: "Tricep Pushdown", group: "Arms" },
+        ],
+      },
+      {
+        name: "Lower A — Strength",
+        groups: ["Legs", "Core"],
+        exercises: [
+          { name: "Back Squat", group: "Legs" },
+          { name: "Romanian Deadlift", group: "Legs" },
+          { name: "Leg Press", group: "Legs" },
+          { name: "Leg Curl", group: "Legs" },
+          { name: "Standing Calf Raise", group: "Legs" },
+          { name: "Plank", group: "Core" },
+        ],
+      },
+      {
+        name: "Upper B — Volume",
+        groups: ["Chest", "Back", "Shoulders", "Arms"],
+        exercises: [
+          { name: "Incline Dumbbell Press", group: "Chest" },
+          { name: "Seated Cable Row", group: "Back" },
+          { name: "Dumbbell Shoulder Press", group: "Shoulders" },
+          { name: "Lat Pulldown", group: "Back" },
+          { name: "Lateral Raise", group: "Shoulders" },
+          { name: "Hammer Curl", group: "Arms" },
+          { name: "Skull Crusher", group: "Arms" },
+        ],
+      },
+      {
+        name: "Lower B — Volume",
+        groups: ["Legs", "Core"],
+        exercises: [
+          { name: "Front Squat", group: "Legs" },
+          { name: "Bulgarian Split Squat", group: "Legs" },
+          { name: "Hip Thrust", group: "Legs" },
+          { name: "Leg Extension", group: "Legs" },
+          { name: "Seated Leg Curl", group: "Legs" },
+          { name: "Cable Crunch", group: "Core" },
+        ],
+      },
+    ],
+  },
+  {
+    name: "Bro Split",
+    tag: "5-Day",
+    days: [
+      {
+        name: "Chest Day",
+        groups: ["Chest"],
+        exercises: [
+          { name: "Bench Press", group: "Chest" },
+          { name: "Incline Dumbbell Press", group: "Chest" },
+          { name: "Cable Flyes", group: "Chest" },
+          { name: "Dumbbell Flyes", group: "Chest" },
+          { name: "Pec Deck", group: "Chest" },
+          { name: "Dips (Chest)", group: "Chest" },
+        ],
+      },
+      {
+        name: "Back Day",
+        groups: ["Back"],
+        exercises: [
+          { name: "Deadlift", group: "Back" },
+          { name: "Pull-ups", group: "Back" },
+          { name: "Barbell Row", group: "Back" },
+          { name: "Lat Pulldown", group: "Back" },
+          { name: "Seated Cable Row", group: "Back" },
+          { name: "Straight-Arm Pulldown", group: "Back" },
+        ],
+      },
+      {
+        name: "Shoulder Day",
+        groups: ["Shoulders"],
+        exercises: [
+          { name: "Overhead Press", group: "Shoulders" },
+          { name: "Arnold Press", group: "Shoulders" },
+          { name: "Lateral Raise", group: "Shoulders" },
+          { name: "Rear Delt Fly", group: "Shoulders" },
+          { name: "Face Pull", group: "Shoulders" },
+          { name: "Shrugs", group: "Shoulders" },
+        ],
+      },
+      {
+        name: "Arm Day",
+        groups: ["Arms"],
+        exercises: [
+          { name: "Barbell Curl", group: "Arms" },
+          { name: "Skull Crusher", group: "Arms" },
+          { name: "Hammer Curl", group: "Arms" },
+          { name: "Tricep Pushdown", group: "Arms" },
+          { name: "Preacher Curl", group: "Arms" },
+          { name: "Overhead Tricep Extension", group: "Arms" },
+        ],
+      },
+      {
+        name: "Leg Day",
+        groups: ["Legs", "Core"],
+        exercises: [
+          { name: "Back Squat", group: "Legs" },
+          { name: "Leg Press", group: "Legs" },
+          { name: "Romanian Deadlift", group: "Legs" },
+          { name: "Leg Extension", group: "Legs" },
+          { name: "Leg Curl", group: "Legs" },
+          { name: "Standing Calf Raise", group: "Legs" },
+          { name: "Hanging Leg Raise", group: "Core" },
+        ],
+      },
+    ],
+  },
+  {
+    name: "Full Body",
+    tag: "3-Day",
+    days: [
+      {
+        name: "Full Body A",
+        groups: ["Chest", "Back", "Legs", "Shoulders", "Core"],
+        exercises: [
+          { name: "Bench Press", group: "Chest" },
+          { name: "Barbell Row", group: "Back" },
+          { name: "Back Squat", group: "Legs" },
+          { name: "Overhead Press", group: "Shoulders" },
+          { name: "Plank", group: "Core" },
+        ],
+      },
+      {
+        name: "Full Body B",
+        groups: ["Chest", "Back", "Legs", "Arms", "Core"],
+        exercises: [
+          { name: "Incline Dumbbell Press", group: "Chest" },
+          { name: "Pull-ups", group: "Back" },
+          { name: "Romanian Deadlift", group: "Legs" },
+          { name: "Dumbbell Curl", group: "Arms" },
+          { name: "Tricep Pushdown", group: "Arms" },
+          { name: "Hanging Leg Raise", group: "Core" },
+        ],
+      },
+      {
+        name: "Full Body C",
+        groups: ["Chest", "Back", "Legs", "Shoulders", "Core"],
+        exercises: [
+          { name: "Dumbbell Bench Press", group: "Chest" },
+          { name: "Seated Cable Row", group: "Back" },
+          { name: "Front Squat", group: "Legs" },
+          { name: "Lateral Raise", group: "Shoulders" },
+          { name: "Hip Thrust", group: "Legs" },
+          { name: "Cable Crunch", group: "Core" },
+        ],
+      },
+    ],
+  },
+  {
+    name: "Arnold Split",
+    tag: "6-Day",
+    days: [
+      {
+        name: "Chest & Back",
+        groups: ["Chest", "Back"],
+        exercises: [
+          { name: "Bench Press", group: "Chest" },
+          { name: "Incline Dumbbell Press", group: "Chest" },
+          { name: "Pull-ups", group: "Back" },
+          { name: "Barbell Row", group: "Back" },
+          { name: "Cable Flyes", group: "Chest" },
+          { name: "Lat Pulldown", group: "Back" },
+        ],
+      },
+      {
+        name: "Shoulders & Arms",
+        groups: ["Shoulders", "Arms"],
+        exercises: [
+          { name: "Arnold Press", group: "Shoulders" },
+          { name: "Lateral Raise", group: "Shoulders" },
+          { name: "Barbell Curl", group: "Arms" },
+          { name: "Skull Crusher", group: "Arms" },
+          { name: "Rear Delt Fly", group: "Shoulders" },
+          { name: "Hammer Curl", group: "Arms" },
+          { name: "Tricep Pushdown", group: "Arms" },
+        ],
+      },
+      {
+        name: "Legs",
+        groups: ["Legs", "Core"],
+        exercises: [
+          { name: "Back Squat", group: "Legs" },
+          { name: "Romanian Deadlift", group: "Legs" },
+          { name: "Leg Press", group: "Legs" },
+          { name: "Walking Lunges", group: "Legs" },
+          { name: "Leg Curl", group: "Legs" },
+          { name: "Standing Calf Raise", group: "Legs" },
+          { name: "Hanging Leg Raise", group: "Core" },
+        ],
+      },
+    ],
+  },
+];
+
 /* Inject keyframes once */
 if (typeof document !== "undefined" && !document.getElementById("gym-tab-anims")) {
   const style = document.createElement("style");
@@ -238,8 +494,10 @@ function BodyPicker({ selected, onToggle }) {
   );
 }
 
-export default function GymTab({ gymLog, saveGymLog, bodyWeight, saveBodyWeight }) {
+export default function GymTab({ gymLog, saveGymLog, bodyWeight, saveBodyWeight, workoutTemplates, saveWorkoutTemplates }) {
   const [section, setSection] = useState("log");
+  const [savingTemplate, setSavingTemplate] = useState(false);
+  const [templateName, setTemplateName] = useState("");
   const [weightInput, setWeightInput] = useState("");
   const [sessionGroups, setSessionGroups] = useState([]);
   const [sessionActive, setSessionActive] = useState(false);
@@ -278,6 +536,56 @@ export default function GymTab({ gymLog, saveGymLog, bodyWeight, saveBodyWeight 
     setSessionActive(false);
     setActiveEntry(null);
     setSessionGroups([]);
+  }
+
+  const templates = workoutTemplates || [];
+
+  function saveAsTemplate() {
+    if (!templateName.trim()) return;
+    const exercises = todayWorkouts.map(e => ({ name: e.name, group: e.group }));
+    if (exercises.length === 0) return;
+    const groups = [...new Set(exercises.map(e => e.group))];
+    const template = { id: makeId(), name: templateName.trim(), groups, exercises, createdAt: new Date().toISOString() };
+    saveWorkoutTemplates([template, ...templates]);
+    setSavingTemplate(false); setTemplateName("");
+  }
+
+  function loadTemplate(template) {
+    setSessionGroups(template.groups || []);
+    setSessionActive(true);
+    setSessionStart(Date.now());
+    // Pre-create entries for each exercise in the template
+    const newEntries = template.exercises.map(ex => ({
+      id: makeId(), date: today, name: ex.name, group: ex.group, sets: [],
+      time: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
+    }));
+    // Don't duplicate exercises already logged today
+    const existingNames = new Set(todayWorkouts.map(e => e.name));
+    const toAdd = newEntries.filter(e => !existingNames.has(e.name));
+    if (toAdd.length > 0) {
+      saveGymLog([...toAdd, ...(gymLog || [])]);
+    }
+    setPicking(true);
+  }
+
+  function deleteTemplate(id) {
+    saveWorkoutTemplates(templates.filter(t => t.id !== id));
+  }
+
+  function addPresetDay(day) {
+    const exists = templates.some(t => t.name === day.name);
+    if (exists) return;
+    const template = { id: makeId(), name: day.name, groups: day.groups, exercises: day.exercises, createdAt: new Date().toISOString() };
+    saveWorkoutTemplates([...templates, template]);
+  }
+
+  function addPresetProgram(program) {
+    const existingNames = new Set(templates.map(t => t.name));
+    const toAdd = program.days.filter(d => !existingNames.has(d.name)).map(d => ({
+      id: makeId(), name: d.name, groups: d.groups, exercises: d.exercises, createdAt: new Date().toISOString(),
+    }));
+    if (toAdd.length === 0) return;
+    saveWorkoutTemplates([...templates, ...toAdd]);
   }
 
   function lastWeight(name) {
@@ -404,7 +712,7 @@ export default function GymTab({ gymLog, saveGymLog, bodyWeight, saveBodyWeight 
   return (
     <div style={{ animation: "fadeIn 0.3s ease-out" }}>
       <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
-        {[{ id: "log", label: "Log" }, { id: "stats", label: "Stats" }, { id: "weight", label: "Weight" }].map(s => (
+        {[{ id: "log", label: "Log" }, { id: "templates", label: "Templates" }, { id: "stats", label: "Stats" }, { id: "weight", label: "Weight" }].map(s => (
           <button key={s.id} className={`filter-chip ${section === s.id ? "active" : ""}`} onClick={() => setSection(s.id)}>{s.label}</button>
         ))}
       </div>
@@ -551,6 +859,152 @@ export default function GymTab({ gymLog, saveGymLog, bodyWeight, saveBodyWeight 
           )}
         </div>
       )}
+
+      {/* ─── TEMPLATES ─── */}
+      {section === "templates" && (() => {
+        const templateNames = new Set(templates.map(t => t.name));
+
+        return (
+          <div style={{ animation: "fadeIn 0.2s ease-out" }}>
+            <div style={{ fontFamily: "var(--display)", fontSize: 24, fontWeight: 700, marginBottom: 14 }}>Workout Templates</div>
+
+            {/* Save current workout as template */}
+            {hasSession && !savingTemplate && (
+              <button className="cozy-btn primary full" onClick={() => setSavingTemplate(true)} style={{ marginBottom: 14 }}>
+                Save Today's Workout as Template
+              </button>
+            )}
+
+            {savingTemplate && (
+              <Card style={{ padding: 14, marginBottom: 14, border: "2px solid var(--accent)" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>
+                  {todayWorkouts.length} exercises: {todayWorkouts.map(e => e.name).join(", ")}
+                </div>
+                <input className="cozy-input" placeholder="Template name (e.g. Push Day)" value={templateName}
+                  onChange={e => setTemplateName(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") saveAsTemplate(); }}
+                  style={{ marginBottom: 8 }} />
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button className="cozy-btn primary" style={{ flex: 1 }} onClick={saveAsTemplate} disabled={!templateName.trim()}>Save</button>
+                  <button className="cozy-btn secondary" onClick={() => setSavingTemplate(false)}>Cancel</button>
+                </div>
+              </Card>
+            )}
+
+            {/* My Templates */}
+            {templates.length > 0 && (
+              <>
+                <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>My Templates</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 24 }}>
+                  {templates.map((t, i) => (
+                    <Card key={t.id} style={{ padding: 0, animation: `fadeIn 0.2s ease-out ${i * 40}ms both` }}>
+                      <div style={{ padding: "14px 16px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+                          <div>
+                            <div style={{ fontWeight: 800, fontSize: 16 }}>{t.name}</div>
+                            <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
+                              {t.exercises.length} exercises · {t.groups.join(", ")}
+                            </div>
+                          </div>
+                          <button onClick={() => deleteTemplate(t.id)} style={{ background: "none", border: "none", color: "var(--muted)", fontSize: 14, cursor: "pointer", padding: 4 }}>✕</button>
+                        </div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 10 }}>
+                          {t.exercises.map((ex, j) => (
+                            <span key={j} style={{
+                              fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 6,
+                              background: GROUP_COLORS[ex.group] ? `${GROUP_COLORS[ex.group]}18` : "#f5f0e8",
+                              color: GROUP_COLORS[ex.group] || "var(--muted)",
+                              border: `1px solid ${GROUP_COLORS[ex.group] ? `${GROUP_COLORS[ex.group]}30` : "#e0cdb5"}`,
+                            }}>
+                              {ex.name}
+                            </span>
+                          ))}
+                        </div>
+                        <button className="cozy-btn primary full" style={{ fontSize: 12 }} onClick={() => loadTemplate(t)}>
+                          Start This Workout
+                        </button>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Preset Programs */}
+            <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 10 }}>Programs</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {PRESET_PROGRAMS.map((program, pi) => (
+                <Card key={program.name} style={{ padding: 0, overflow: "hidden", animation: `fadeIn 0.3s ease-out ${pi * 50}ms both` }}>
+                  <div style={{ padding: "14px 16px 10px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                      <div style={{ fontWeight: 800, fontSize: 17, fontFamily: "var(--display)" }}>{program.name}</div>
+                      <span style={{
+                        fontSize: 10, fontWeight: 800, padding: "3px 8px", borderRadius: 6,
+                        background: "linear-gradient(135deg, rgba(196,149,106,0.15), rgba(196,149,106,0.08))",
+                        color: "var(--accent)",
+                      }}>
+                        {program.tag}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600, marginBottom: 10 }}>
+                      {program.days.length} workout{program.days.length > 1 ? "s" : ""} per cycle
+                    </div>
+
+                    {/* Add all button */}
+                    {!program.days.every(d => templateNames.has(d.name)) && (
+                      <button className="cozy-btn secondary full" style={{ fontSize: 11, marginBottom: 10, padding: "8px 14px", minHeight: 36 }}
+                        onClick={() => addPresetProgram(program)}>
+                        Add All to My Templates
+                      </button>
+                    )}
+                    {program.days.every(d => templateNames.has(d.name)) && (
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "#4a7a4a", textAlign: "center", marginBottom: 10, padding: "6px 0" }}>
+                        Added to your templates
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Individual days */}
+                  {program.days.map((day, di) => {
+                    const added = templateNames.has(day.name);
+                    return (
+                      <div key={di} style={{ padding: "10px 16px", borderTop: "1px solid #f0e6d6" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: 14 }}>{day.name}</div>
+                            <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 1 }}>
+                              {day.exercises.length} exercises · {day.groups.join(", ")}
+                            </div>
+                          </div>
+                          {!added ? (
+                            <button className="filter-chip" onClick={() => addPresetDay(day)}
+                              style={{ fontSize: 10, padding: "4px 10px", minHeight: 26 }}>
+                              + Add
+                            </button>
+                          ) : (
+                            <span style={{ fontSize: 10, fontWeight: 700, color: "#4a7a4a", padding: "4px 10px" }}>Added</span>
+                          )}
+                        </div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
+                          {day.exercises.map((ex, j) => (
+                            <span key={j} style={{
+                              fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 5,
+                              background: GROUP_COLORS[ex.group] ? `${GROUP_COLORS[ex.group]}12` : "#f5f0e8",
+                              color: GROUP_COLORS[ex.group] || "var(--muted)",
+                            }}>
+                              {ex.name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </Card>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ─── STATS ─── */}
       {section === "stats" && (
@@ -770,6 +1224,47 @@ export default function GymTab({ gymLog, saveGymLog, bodyWeight, saveBodyWeight 
                   {trendData.length === 1 ? "Need 2+ sessions to show trend" : "No data yet"}
                 </div>
               )}
+            </Card>
+          )}
+          {/* Body Weight in Stats */}
+          {(() => {
+            const entries = (bodyWeight || []).sort((a, b) => a.date.localeCompare(b.date));
+            const latest = entries.length > 0 ? Number(entries[entries.length - 1].weight) : null;
+            const last7w = entries.slice(-7);
+            const avg = last7w.length > 0 ? (last7w.reduce((s, e) => s + Number(e.weight), 0) / last7w.length).toFixed(1) : null;
+            const first = entries.length > 1 ? Number(entries[0].weight) : null;
+            const change = latest && first ? (latest - first).toFixed(1) : null;
+            return latest && (
+              <Card style={{ padding: 16, marginBottom: 14, animation: `fadeIn 0.2s ease-out 420ms both` }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: "var(--muted)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.3 }}>Body Weight</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, textAlign: "center" }}>
+                  <div>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: "var(--text)" }}>{latest}<span style={{ fontSize: 10, color: "var(--muted)" }}> lb</span></div>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: "var(--muted)" }}>Current</div>
+                  </div>
+                  {avg && (
+                    <div>
+                      <div style={{ fontSize: 20, fontWeight: 800, color: "var(--text)" }}>{avg}<span style={{ fontSize: 10, color: "var(--muted)" }}> lb</span></div>
+                      <div style={{ fontSize: 9, fontWeight: 700, color: "var(--muted)" }}>7-Day Avg</div>
+                    </div>
+                  )}
+                  {change && (
+                    <div>
+                      <div style={{ fontSize: 20, fontWeight: 800, color: Number(change) <= 0 ? "#6b8e6b" : "#d48a7b" }}>
+                        {Number(change) > 0 ? "+" : ""}{change}<span style={{ fontSize: 10, color: "var(--muted)" }}> lb</span>
+                      </div>
+                      <div style={{ fontSize: 9, fontWeight: 700, color: "var(--muted)" }}>All-Time</div>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            );
+          })()}
+
+          {/* Empty state when no data */}
+          {uniqueExercises.length === 0 && (
+            <Card style={{ padding: 20, textAlign: "center", animation: "fadeIn 0.3s ease-out" }}>
+              <div style={{ fontSize: 13, color: "var(--muted)" }}>Log some exercises to see your PRs, overload suggestions, and trends here.</div>
             </Card>
           )}
         </div>

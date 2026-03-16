@@ -18,7 +18,7 @@ const ACTIVITY_MULTIPLIERS = {
   "Very Active": 1.9,
 };
 
-export default function SettingsTab({ userProfile, saveUserProfile, macroGoals, saveMacroGoals }) {
+export default function SettingsTab({ userProfile, saveUserProfile, macroGoals, saveMacroGoals, bodyWeight, showToast }) {
   const p = userProfile || {};
   const [name, setName] = useState(p.name || "");
   const [age, setAge] = useState(p.age || "");
@@ -122,6 +122,58 @@ export default function SettingsTab({ userProfile, saveUserProfile, macroGoals, 
     });
   }
 
+  // Latest body weight from gym tracking
+  const latestBodyWeight = (() => {
+    if (!bodyWeight || bodyWeight.length === 0) return null;
+    const sorted = [...bodyWeight].sort((a, b) => b.date.localeCompare(a.date));
+    return Number(sorted[0].weight);
+  })();
+
+  function syncWeight() {
+    if (!latestBodyWeight) return;
+    setWeight(String(latestBodyWeight));
+    showToast?.(`Weight updated to ${latestBodyWeight} lb from gym log`);
+  }
+
+  function exportData() {
+    const data = {};
+    Object.entries(STORAGE_KEYS).forEach(([name, key]) => {
+      try {
+        const raw = localStorage.getItem(key);
+        if (raw) data[name] = JSON.parse(raw);
+      } catch {}
+    });
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `stockd-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast?.("Data exported successfully");
+  }
+
+  function importData(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        Object.entries(STORAGE_KEYS).forEach(([name, key]) => {
+          if (data[name]) {
+            localStorage.setItem(key, JSON.stringify(data[name]));
+          }
+        });
+        showToast?.("Data imported — reloading...");
+        setTimeout(() => window.location.reload(), 1000);
+      } catch {
+        showToast?.("Invalid backup file");
+      }
+    };
+    reader.readAsText(file);
+  }
+
   function clearAllData() {
     Object.values(STORAGE_KEYS).forEach(key => {
       try { window.storage.remove(key).catch(() => {}); } catch {}
@@ -155,6 +207,15 @@ export default function SettingsTab({ userProfile, saveUserProfile, macroGoals, 
           <div>
             <label style={labelStyle}>Current Weight (lb)</label>
             <input className="cozy-input" placeholder="170" value={weight} onChange={e => setWeight(e.target.value)} inputMode="numeric" />
+            {latestBodyWeight && Number(weight) !== latestBodyWeight && (
+              <button onClick={syncWeight} style={{
+                marginTop: 4, background: "none", border: "none", cursor: "pointer",
+                fontSize: 11, fontWeight: 700, color: "var(--accent)", fontFamily: "var(--body)",
+                padding: 0, WebkitTapHighlightColor: "transparent",
+              }}>
+                Use latest: {latestBodyWeight} lb from gym log
+              </button>
+            )}
           </div>
         </div>
 
@@ -313,6 +374,13 @@ export default function SettingsTab({ userProfile, saveUserProfile, macroGoals, 
       {/* Data Management */}
       <Card style={{ marginBottom: 14, padding: 16 }}>
         <div style={sectionTitle}>Data</div>
+        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+          <button className="cozy-btn secondary" style={{ flex: 1, fontSize: 12 }} onClick={exportData}>Export Backup</button>
+          <label className="cozy-btn secondary" style={{ flex: 1, fontSize: 12, cursor: "pointer", textAlign: "center" }}>
+            Import Backup
+            <input type="file" accept=".json" onChange={importData} style={{ display: "none" }} />
+          </label>
+        </div>
         {!showClearConfirm ? (
           <button className="cozy-btn danger full" onClick={() => setShowClearConfirm(true)}>
             Clear All Data
