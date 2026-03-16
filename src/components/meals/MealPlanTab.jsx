@@ -224,8 +224,8 @@ export default function MealPlanTab({
               })}
             </div>
             <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
-              <button className="cozy-btn primary" style={{ flex: 1, fontSize: 12, padding: "8px 12px", minHeight: 36 }} onClick={() => { setAdding("manual"); setLogName(""); setLogCal(""); setLogPro(""); setLogCarb(""); setLogFat(""); }}>Log Food</button>
-              <button className="cozy-btn secondary" style={{ flex: 1, fontSize: 12, padding: "8px 12px", minHeight: 36 }} onClick={() => setAdding("recipe")}>From Recipe</button>
+              <button className="cozy-btn primary" style={{ flex: 1, fontSize: 12, padding: "8px 12px", minHeight: 36, justifyContent: "center" }} onClick={() => { setAdding("manual"); setLogName(""); setLogCal(""); setLogPro(""); setLogCarb(""); setLogFat(""); }}>Log Food</button>
+              <button className="cozy-btn secondary" style={{ flex: 1, fontSize: 12, padding: "8px 12px", minHeight: 36, justifyContent: "center" }} onClick={() => setAdding("recipe")}>From Recipe</button>
             </div>
           </Card>
 
