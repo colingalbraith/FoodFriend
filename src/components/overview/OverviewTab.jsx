@@ -24,6 +24,7 @@ export default function OverviewTab({ items, saveItems, lowStockItems, saveLowSt
   const [pantryEditing, setPantryEditing] = useState(false);
   const [newStaple, setNewStaple] = useState("");
   const [pantryLimit, setPantryLimit] = useState(5);
+  const [pantrySearch, setPantrySearch] = useState("");
 
   // ─── Fridge logic ───
   function removeItem(id) { saveItems(items.filter(i => i.id !== id)); }
@@ -73,8 +74,12 @@ export default function OverviewTab({ items, saveItems, lowStockItems, saveLowSt
   const allStaples = allNames.map(name => ({ name, inStock: stapleState[name] ?? true }));
   const inStockCount = allStaples.filter(s => s.inStock).length;
   const outCount = allStaples.filter(s => !s.inStock).length;
-  const pantryFiltered = pantryFilter === "stocked" ? allStaples.filter(s => s.inStock)
+  let pantryFiltered = pantryFilter === "stocked" ? allStaples.filter(s => s.inStock)
     : pantryFilter === "needed" ? allStaples.filter(s => !s.inStock) : allStaples;
+  if (pantrySearch.trim()) {
+    const pq = pantrySearch.toLowerCase();
+    pantryFiltered = pantryFiltered.filter(s => s.name.toLowerCase().includes(pq));
+  }
 
   function toggleStaple(name) { saveStaples({ ...stapleState, [name]: !stapleState[name] }); }
   function addStaple() { const name = newStaple.trim(); if (!name || stapleState[name] !== undefined) return; saveStaples({ ...stapleState, [name]: true }); setNewStaple(""); }
@@ -174,19 +179,23 @@ export default function OverviewTab({ items, saveItems, lowStockItems, saveLowSt
       {/* ═══ PANTRY LIST ═══ */}
       {section === "pantry" && (
         <>
+          {/* Search */}
+          <input className="cozy-input" placeholder="Search staples..." value={pantrySearch}
+            onChange={e => { setPantrySearch(e.target.value); setPantryLimit(5); }} style={{ marginBottom: 10 }} />
+
           {/* Filter + Edit row */}
-          <div style={{ display: "flex", gap: 6, marginBottom: 10, alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 5, marginBottom: 12, overflowX: "auto", WebkitOverflowScrolling: "touch", paddingBottom: 2 }}>
             {[
               { id: "all", label: `All (${allStaples.length})` },
               { id: "stocked", label: `Stocked (${inStockCount})` },
               { id: "needed", label: `Need (${outCount})` },
             ].map(f => (
               <button key={f.id} className={`filter-chip ${pantryFilter === f.id ? "active" : ""}`}
-                onClick={() => { setPantryFilter(f.id); setPantryLimit(5); }} style={{ fontSize: 11, padding: "5px 10px", minHeight: 28 }}>{f.label}</button>
+                onClick={() => { setPantryFilter(f.id); setPantryLimit(5); }} style={{ fontSize: 11, padding: "5px 10px", minHeight: 28, flexShrink: 0 }}>{f.label}</button>
             ))}
             <button className={`filter-chip ${pantryEditing ? "active" : ""}`}
               onClick={() => setPantryEditing(!pantryEditing)}
-              style={{ marginLeft: "auto", fontSize: 11, padding: "5px 10px", minHeight: 28 }}>
+              style={{ marginLeft: "auto", fontSize: 11, padding: "5px 10px", minHeight: 28, flexShrink: 0 }}>
               {pantryEditing ? "Done" : "Edit"}
             </button>
           </div>
