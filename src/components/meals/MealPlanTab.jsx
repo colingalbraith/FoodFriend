@@ -400,6 +400,9 @@ export default function MealPlanTab({ meals, saveMeals, items, recurring, saveRe
           <div style={{ fontFamily: "var(--display)", fontSize: 24, fontWeight: 700, marginBottom: 14 }}>Weekly Stats</div>
 
           {/* Calorie bar chart */}
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 6 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: "var(--muted)" }}>Goal: {goals.calories} cal/day</span>
+          </div>
           <Card style={{ padding: 16, marginBottom: 14 }}>
             <div style={{ fontSize: 12, fontWeight: 800, color: "var(--muted)", marginBottom: 12, textTransform: "uppercase", letterSpacing: 0.3 }}>Calories</div>
             <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 120 }}>
@@ -421,9 +424,6 @@ export default function MealPlanTab({ meals, saveMeals, items, recurring, saveRe
                   </div>
                 );
               })}
-            </div>
-            <div style={{ borderTop: "1px dashed #e0cdb5", marginTop: 4, position: "relative" }}>
-              <span style={{ position: "absolute", right: 0, top: -8, fontSize: 8, color: "var(--muted)" }}>Goal: {goals.calories}</span>
             </div>
           </Card>
 
