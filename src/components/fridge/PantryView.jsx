@@ -1,13 +1,5 @@
 import { DEFAULT_STAPLES } from "../../constants/storage";
-
-const STAPLE_EMOJI = {
-  Rice: "🍚", Pasta: "🍝", "Black Beans": "🫘", "Olive Oil": "🫒", Butter: "🧈",
-  Flour: "🌾", Sugar: "🍬", Salt: "🧂", Pepper: "🌶️", Garlic: "🧄",
-  Onions: "🧅", "Tomato Paste": "🍅", "Soy Sauce": "🫙", Vinegar: "🫙", Eggs: "🥚",
-  Milk: "🥛", Bread: "🍞", Coffee: "☕", "Peanut Butter": "🥜", "Protein Powder": "🥛",
-  Creatine: "💊",
-};
-function getStapleEmoji(name) { return STAPLE_EMOJI[name] || "🍽️"; }
+import { getFoodEmoji } from "../../constants/foodEmoji";
 
 export default function PantryView({ staples }) {
   const stapleState = staples || Object.fromEntries(DEFAULT_STAPLES.map(s => [s, true]));
@@ -30,7 +22,7 @@ export default function PantryView({ staples }) {
             <div key={shelfIdx} style={{ flex: 1, borderBottom: shelfIdx < 3 ? "3px solid #8B6914" : "none", position: "relative", display: "flex", flexWrap: "wrap", alignItems: "flex-end", alignContent: "flex-end", justifyContent: "center", gap: 2, padding: "2px 4px" }}>
               {shelfItems.map((item, i) => (
                 <div key={item.name} style={{ fontSize: 20, lineHeight: 1, opacity: item.inStock ? 1 : 0.25, filter: item.inStock ? "none" : "grayscale(0.8)", transition: "opacity 0.3s ease", position: "relative", animation: `popIn 0.3s ease-out ${(shelfIdx * 5 + i) * 40}ms both` }}>
-                  {getStapleEmoji(item.name)}
+                  {getFoodEmoji(item.name)}
                   {!item.inStock && <div style={{ position: "absolute", inset: -1, border: "1.5px dashed #b0a090", borderRadius: 6, pointerEvents: "none" }} />}
                 </div>
               ))}

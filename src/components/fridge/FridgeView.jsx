@@ -1,7 +1,5 @@
-import { useState } from "react";
-import { daysUntil, expiryBadge } from "../../utils/dateHelpers";
-import { CATEGORY_COLORS } from "../../constants/categories";
-import Badge from "../ui/Badge";
+import { daysUntil } from "../../utils/dateHelpers";
+import { getFoodEmoji } from "../../constants/foodEmoji";
 
 const SHELF_MAP = {
   Frozen: 0,
@@ -9,63 +7,6 @@ const SHELF_MAP = {
   Meat: 2, Seafood: 2, Leftovers: 2, Grains: 2,
   Produce: 3, Bakery: 3, Snacks: 3, Other: 2,
 };
-
-const FOOD_EMOJI = {
-  apple: "🍎", banana: "🍌", orange: "🍊", lemon: "🍋", lime: "🍋",
-  grape: "🍇", strawberry: "🍓", blueberry: "🫐", raspberry: "🫐",
-  cherry: "🍒", peach: "🍑", pear: "🍐", watermelon: "🍉", melon: "🍈",
-  mango: "🥭", kiwi: "🥝", pineapple: "🍍", coconut: "🥥", avocado: "🥑",
-  tomato: "🍅", corn: "🌽", pepper: "🌶️", "bell pepper": "🫑",
-  broccoli: "🥦", lettuce: "🥬", spinach: "🥬", kale: "🥬", arugula: "🥬",
-  cucumber: "🥒", carrot: "🥕", potato: "🥔", "sweet potato": "🍠",
-  onion: "🧅", garlic: "🧄", mushroom: "🍄", ginger: "🫚",
-  egg: "🥚", eggs: "🥚",
-  milk: "🥛", "oat milk": "🥛", "almond milk": "🥛",
-  cheese: "🧀", butter: "🧈", yogurt: "🥛",
-  chicken: "🍗", turkey: "🍗", steak: "🥩", beef: "🥩",
-  pork: "🥩", bacon: "🥓", ham: "🍖", sausage: "🌭",
-  fish: "🐟", salmon: "🐟", tuna: "🐟", shrimp: "🦐", crab: "🦀",
-  lobster: "🦞",
-  bread: "🍞", bagel: "🥯", croissant: "🥐", pretzel: "🥨",
-  rice: "🍚", pasta: "🍝", noodle: "🍜", spaghetti: "🍝",
-  pizza: "🍕", burger: "🍔", sandwich: "🥪", taco: "🌮", burrito: "🌯",
-  "hot dog": "🌭", fries: "🍟",
-  cake: "🍰", cookie: "🍪", donut: "🍩", chocolate: "🍫",
-  candy: "🍬", "ice cream": "🍦", pie: "🥧", cupcake: "🧁",
-  coffee: "☕", tea: "🍵", juice: "🧃", water: "💧",
-  wine: "🍷", beer: "🍺", soda: "🥤",
-  honey: "🍯", jam: "🫙", "peanut butter": "🥜", nut: "🥜", almond: "🥜",
-  bean: "🫘", "black bean": "🫘", lentil: "🫘", chickpea: "🫘",
-  tofu: "🧊", "soy sauce": "🫙",
-  salt: "🧂", oil: "🫒", "olive oil": "🫒", vinegar: "🫙",
-  flour: "🌾", oat: "🌾", cereal: "🥣",
-  "protein powder": "🥛", creatine: "💊", supplement: "💊",
-  soup: "🍲", stew: "🍲", curry: "🍛", salad: "🥗",
-  sushi: "🍣", dumpling: "🥟", "spring roll": "🥟",
-  waffle: "🧇", pancake: "🥞",
-  popcorn: "🍿", chip: "🍿",
-  "tomato paste": "🍅", "cream cheese": "🧀", "sour cream": "🥛",
-  "ground beef": "🥩", "ground turkey": "🍗", "chicken breast": "🍗",
-};
-
-const CATEGORY_FALLBACK = {
-  Produce: "🥬", Dairy: "🧀", Meat: "🥩", Seafood: "🐟",
-  Grains: "🌾", Frozen: "🧊", Condiments: "🫙", Beverages: "🥤",
-  Snacks: "🍪", Bakery: "🍞", Leftovers: "🍲", Other: "🍽️",
-};
-
-function getFoodEmoji(name, category) {
-  const key = name.toLowerCase().trim();
-  if (FOOD_EMOJI[key]) return FOOD_EMOJI[key];
-  for (const [k, v] of Object.entries(FOOD_EMOJI)) {
-    if (key.includes(k) || k.includes(key)) return v;
-  }
-  const singular = key.endsWith("s") ? key.slice(0, -1) : key;
-  if (FOOD_EMOJI[singular]) return FOOD_EMOJI[singular];
-  const plural = key + "s";
-  if (FOOD_EMOJI[plural]) return FOOD_EMOJI[plural];
-  return CATEGORY_FALLBACK[category] || "🍽️";
-}
 
 function FoodItem({ item, index, onTap }) {
   const days = daysUntil(item.expiry);
