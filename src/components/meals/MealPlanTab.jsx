@@ -192,7 +192,7 @@ export default function MealPlanTab({
     <div style={{ animation: "fadeIn 0.3s ease-out" }}>
       {/* Section toggle */}
       <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
-        {[{ id: "plan", label: "Plan" }, { id: "track", label: "Track" }, { id: "recipes", label: "Recipes" }, { id: "shop", label: "Shop" }].map(s => (
+        {[{ id: "plan", label: "Plan" }, { id: "recipes", label: "Recipes" }, { id: "shop", label: "Shop" }].map(s => (
           <button key={s.id} className={`filter-chip ${section === s.id ? "active" : ""}`} onClick={() => setSection(s.id)}>
             {s.label}{s.id === "shop" && shopUnchecked.length > 0 ? ` (${shopUnchecked.length})` : ""}
           </button>
@@ -300,45 +300,17 @@ export default function MealPlanTab({
         </>
       )}
 
-      {/* ═══ TRACK ═══ */}
-      {section === "track" && (
-        <>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
-            <div style={{ fontFamily: "var(--display)", fontSize: 24, fontWeight: 700 }}>Today</div>
-            <button className="filter-chip" onClick={() => { setGoalCal(String(goals.calories)); setGoalPro(String(goals.protein)); setGoalCarb(String(goals.carbs)); setGoalFat(String(goals.fat)); setEditingGoals(true); }} style={{ fontSize: 11, padding: "4px 10px", minHeight: 28 }}>Goals</button>
-          </div>
-          <Card style={{ padding: 16, marginBottom: 14 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, textAlign: "center" }}>
-              {[{ label: "Cal", val: todayMacros.calories, goal: goals.calories, unit: "" }, { label: "Protein", val: todayMacros.protein, goal: goals.protein, unit: "g" }, { label: "Carbs", val: todayMacros.carbs, goal: goals.carbs, unit: "g" }, { label: "Fat", val: todayMacros.fat, goal: goals.fat, unit: "g" }].map(m => {
-                const p = pct(m.val, m.goal);
-                return (<div key={m.label}><div style={{ position: "relative", width: 52, height: 52, margin: "0 auto 4px" }}><svg width="52" height="52" viewBox="0 0 52 52"><circle cx="26" cy="26" r="22" fill="none" stroke="#e8dcc8" strokeWidth="4.5" /><circle cx="26" cy="26" r="22" fill="none" stroke={ringColor(p)} strokeWidth="4.5" strokeDasharray={`${p * 1.382} 138.2`} strokeLinecap="round" transform="rotate(-90 26 26)" style={{ transition: "stroke-dasharray 0.5s ease" }} /></svg><div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800 }}>{p}%</div></div><div style={{ fontSize: 9, fontWeight: 800, color: "var(--muted)", textTransform: "uppercase" }}>{m.label}</div><div style={{ fontSize: 11, fontWeight: 700 }}>{Math.round(m.val)}<span style={{ color: "var(--muted)", fontSize: 9 }}>/{m.goal}{m.unit}</span></div></div>);
-              })}
-            </div>
-          </Card>
-          <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-            <button className="cozy-btn primary" style={{ flex: 1 }} onClick={() => { setAdding("manual"); setLogName(""); setLogCal(""); setLogPro(""); setLogCarb(""); setLogFat(""); }}>Log Food</button>
-            <button className="cozy-btn secondary" style={{ flex: 1 }} onClick={() => setAdding("recipe")}>From Recipe</button>
-          </div>
-          {todayEntries.length === 0 ? <Card style={{ padding: 20, textAlign: "center" }}><div style={{ fontSize: 13, color: "var(--muted)" }}>No food logged today.</div></Card> : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {todayEntries.map((entry, i) => (<Card key={entry.id} style={{ padding: 0, animation: `fadeIn 0.2s ease-out ${i * 30}ms both` }}><div style={{ display: "flex", alignItems: "center", padding: "12px 14px", gap: 12 }}><div style={{ flex: 1 }}><div style={{ fontWeight: 700, fontSize: 14 }}>{entry.name}</div><div style={{ fontSize: 11, color: "var(--muted)", display: "flex", gap: 8, marginTop: 2 }}><span>{entry.calories} cal</span><span>{entry.protein}g P</span>{entry.time && <span>· {entry.time}</span>}</div></div><button onClick={() => removeEntry(entry.id)} style={{ background: "none", border: "none", color: "var(--muted)", fontSize: 16, cursor: "pointer", padding: 4 }}>✕</button></div></Card>))}
-            </div>
-          )}
-        </>
-      )}
-
       {/* ═══ RECIPES ═══ */}
       {section === "recipes" && (
         <>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
             <div style={{ fontFamily: "var(--display)", fontSize: 24, fontWeight: 700 }}>Recipes</div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>{(recipes || []).length} saved</div>
+            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+              {hasDiet && <button className={`filter-chip ${dietFilter ? "active" : ""}`} onClick={() => setDietFilter(!dietFilter)} style={{ fontSize: 10, padding: "4px 10px", minHeight: 26 }}>{restrictions.filter(r => r !== "None").join(", ")}</button>}
+              <button className={`filter-chip ${canMakeFilter ? "active" : ""}`} onClick={() => setCanMakeFilter(!canMakeFilter)} style={{ fontSize: 10, padding: "4px 10px", minHeight: 26 }}>Can make now</button>
+            </div>
           </div>
           <input className="cozy-input" placeholder="Search recipes..." value={recipeSearch} onChange={e => { setRecipeSearch(e.target.value); setRecipeLimit(20); }} style={{ marginBottom: 10 }} />
-          <div style={{ display: "flex", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
-            {hasDiet && <button className={`filter-chip ${dietFilter ? "active" : ""}`} onClick={() => setDietFilter(!dietFilter)} style={{ fontSize: 11 }}>{restrictions.filter(r => r !== "None").join(", ")}</button>}
-            <button className={`filter-chip ${canMakeFilter ? "active" : ""}`} onClick={() => setCanMakeFilter(!canMakeFilter)} style={{ fontSize: 11 }}>Can make now</button>
-          </div>
           <button className="cozy-btn primary full" onClick={openAddRecipe} style={{ marginBottom: 14 }}>Add Recipe</button>
           {filteredRecipes.length === 0 ? <Card style={{ padding: 20, textAlign: "center" }}><div style={{ fontSize: 13, color: "var(--muted)" }}>{recipeSearch || dietFilter || canMakeFilter ? "No matching recipes" : "No recipes yet"}</div></Card> : (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
