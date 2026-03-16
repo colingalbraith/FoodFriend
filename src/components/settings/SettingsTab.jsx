@@ -236,18 +236,20 @@ export default function SettingsTab({ userProfile, saveUserProfile, macroGoals, 
 
         <div style={{ marginBottom: 12 }}>
           <label style={labelStyle}>Goal</label>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             {GOAL_OPTIONS.map(g => (
-              <button key={g} className={`filter-chip ${goal === g ? "active" : ""}`} onClick={() => setGoal(g)}>{g}</button>
+              <button key={g} className={`filter-chip ${goal === g ? "active" : ""}`} onClick={() => setGoal(g)} style={{ justifyContent: "center", padding: "10px 8px", fontSize: 12 }}>
+                {g === "Lose Weight" && "🔥 "}{g === "Maintain" && "⚖️ "}{g === "Build Muscle" && "💪 "}{g === "Body Recomp" && "🔄 "}{g}
+              </button>
             ))}
           </div>
         </div>
 
         <div style={{ marginBottom: 12 }}>
           <label style={labelStyle}>Activity Level</label>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 5 }}>
             {ACTIVITY_OPTIONS.map(a => (
-              <button key={a} className={`filter-chip ${activity === a ? "active" : ""}`} onClick={() => setActivity(a)}>{a}</button>
+              <button key={a} className={`filter-chip ${activity === a ? "active" : ""}`} onClick={() => setActivity(a)} style={{ fontSize: 10, padding: "8px 4px", justifyContent: "center", minHeight: 34 }}>{a}</button>
             ))}
           </div>
         </div>
@@ -325,9 +327,9 @@ export default function SettingsTab({ userProfile, saveUserProfile, macroGoals, 
 
         <div style={{ marginBottom: 12 }}>
           <label style={labelStyle}>Preferred Split</label>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             {SPLIT_OPTIONS.map(s => (
-              <button key={s} className={`filter-chip ${split === s ? "active" : ""}`} onClick={() => setSplit(s)}>{s}</button>
+              <button key={s} className={`filter-chip ${split === s ? "active" : ""}`} onClick={() => setSplit(s)} style={{ justifyContent: "center", padding: "10px 8px", fontSize: 12 }}>{s}</button>
             ))}
           </div>
         </div>
