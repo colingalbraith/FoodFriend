@@ -7,6 +7,8 @@ export const STORAGE_KEYS = {
   staples: "ff2-staples",
   recipes: "ff2-recipes",
   recurring: "ff2-recurring",
+  macroLog: "ff2-macrolog",
+  macroGoals: "ff2-macrogoals",
 };
 
 export const DEFAULT_RECIPES = [
@@ -114,6 +116,20 @@ export const DEFAULT_RECIPES = [
     ingredients: ["Bread", "Peanut Butter", "Banana"],
     calories: "380", protein: "12", time: "3 min",
     notes: "Drizzle honey on top. Great pre/post workout.",
+  },
+  {
+    id: "dr-bagel-cc",
+    name: "Bagel & Cream Cheese",
+    ingredients: ["Bagel", "Cream Cheese"],
+    calories: "350", protein: "10", time: "3 min",
+    notes: "Toast the bagel. Everything bagels are the move.",
+  },
+  {
+    id: "dr-bagel-pb",
+    name: "Bagel & Peanut Butter",
+    ingredients: ["Bagel", "Peanut Butter"],
+    calories: "400", protein: "14", time: "3 min",
+    notes: "Add banana slices or honey on top.",
   },
 ];
 

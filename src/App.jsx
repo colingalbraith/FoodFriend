@@ -7,6 +7,7 @@ import FridgeTab from "./components/fridge/FridgeTab";
 import MealPlanTab from "./components/meals/MealPlanTab";
 import ShoppingTab from "./components/shopping/ShoppingTab";
 import ChefTab from "./components/chef/ChefTab";
+import MacrosTab from "./components/macros/MacrosTab";
 
 const TAB_ICONS = {
   fridge: (active) => (
@@ -30,6 +31,11 @@ const TAB_ICONS = {
       <line x1="8" y1="20" x2="16" y2="20" />
     </svg>
   ),
+  macros: (active) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? "var(--text)" : "var(--muted)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 20V10M12 20V4M6 20v-6" />
+    </svg>
+  ),
 };
 
 export default function FridgeFriend() {
@@ -41,12 +47,14 @@ export default function FridgeFriend() {
   const [staples, setStaples] = useState(null);
   const [recipes, setRecipes] = useState([]);
   const [recurring, setRecurring] = useState({});
+  const [macroLog, setMacroLog] = useState([]);
+  const [macroGoals, setMacroGoals] = useState(null);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
-        const [a, b, c, d, e, f, g] = await Promise.all([
+        const results = await Promise.all([
           window.storage.get(STORAGE_KEYS.items).catch(() => null),
           window.storage.get(STORAGE_KEYS.meals).catch(() => null),
           window.storage.get(STORAGE_KEYS.shopping).catch(() => null),
@@ -54,7 +62,10 @@ export default function FridgeFriend() {
           window.storage.get(STORAGE_KEYS.staples).catch(() => null),
           window.storage.get(STORAGE_KEYS.recipes).catch(() => null),
           window.storage.get(STORAGE_KEYS.recurring).catch(() => null),
+          window.storage.get(STORAGE_KEYS.macroLog).catch(() => null),
+          window.storage.get(STORAGE_KEYS.macroGoals).catch(() => null),
         ]);
+        const [a, b, c, d, e, f, g, h, i] = results;
         if (a?.value) setItems(JSON.parse(a.value));
         if (b?.value) setMeals(JSON.parse(b.value));
         if (c?.value) setShopping(JSON.parse(c.value));
@@ -67,6 +78,8 @@ export default function FridgeFriend() {
           window.storage.set(STORAGE_KEYS.recipes, JSON.stringify(DEFAULT_RECIPES)).catch(() => {});
         }
         if (g?.value) setRecurring(JSON.parse(g.value));
+        if (h?.value) setMacroLog(JSON.parse(h.value));
+        if (i?.value) setMacroGoals(JSON.parse(i.value));
       } catch (e) { console.error(e); }
       setLoaded(true);
     })();
@@ -84,6 +97,8 @@ export default function FridgeFriend() {
   const saveStaples = save(STORAGE_KEYS.staples, setStaples);
   const saveRecipes = save(STORAGE_KEYS.recipes, setRecipes);
   const saveRecurring = save(STORAGE_KEYS.recurring, setRecurring);
+  const saveMacroLog = save(STORAGE_KEYS.macroLog, setMacroLog);
+  const saveMacroGoals = save(STORAGE_KEYS.macroGoals, setMacroGoals);
 
   const expiringSoon = items.filter(i => { const d = daysUntil(i.expiry); return d >= 0 && d <= 3; }).length;
   const expired = items.filter(i => daysUntil(i.expiry) < 0).length;
@@ -156,6 +171,7 @@ export default function FridgeFriend() {
           {tab === "meals" && <MealPlanTab meals={meals} saveMeals={saveMeals} items={items} recurring={recurring} saveRecurring={saveRecurring} />}
           {tab === "shopping" && <ShoppingTab list={shopping} saveList={saveShopping} items={items} />}
           {tab === "chef" && <ChefTab items={items} saveMeals={saveMeals} meals={meals} recipes={recipes} saveRecipes={saveRecipes} shopping={shopping} saveShopping={saveShopping} />}
+          {tab === "macros" && <MacrosTab macroLog={macroLog} saveMacroLog={saveMacroLog} macroGoals={macroGoals} saveMacroGoals={saveMacroGoals} recipes={recipes} />}
         </main>
       </div>
 
