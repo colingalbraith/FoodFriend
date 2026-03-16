@@ -34,6 +34,7 @@ export default function SettingsTab({ userProfile, saveUserProfile, macroGoals, 
   const [restrictions, setRestrictions] = useState(p.restrictions || []);
   const [computed, setComputed] = useState(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [leaveFridgeOpen, setLeaveFridgeOpen] = useState(typeof localStorage !== "undefined" && localStorage.getItem("ff2-leave-fridge-open") === "true");
 
   // Sync state when userProfile changes externally
   useEffect(() => {
@@ -279,6 +280,35 @@ export default function SettingsTab({ userProfile, saveUserProfile, macroGoals, 
       <button className="cozy-btn primary full" onClick={handleSave} style={{ marginBottom: 20 }}>
         Save Profile
       </button>
+
+      {/* App Preferences */}
+      <Card style={{ marginBottom: 14, padding: 16 }}>
+        <div style={sectionTitle}>Preferences</div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0" }}>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>Leave fridge open</div>
+            <div style={{ fontSize: 11, color: "var(--muted)" }}>Skip the door animation</div>
+          </div>
+          <button onClick={() => {
+            const current = localStorage.getItem("ff2-leave-fridge-open") === "true";
+            localStorage.setItem("ff2-leave-fridge-open", String(!current));
+            setLeaveFridgeOpen(!current);
+          }} style={{
+            width: 48, height: 28, borderRadius: 14, border: "none", cursor: "pointer",
+            background: leaveFridgeOpen ? "var(--accent)" : "#e0cdb5",
+            position: "relative", transition: "background 0.2s ease",
+            WebkitTapHighlightColor: "transparent",
+          }}>
+            <div style={{
+              width: 22, height: 22, borderRadius: 11, background: "white",
+              position: "absolute", top: 3,
+              left: leaveFridgeOpen ? 23 : 3,
+              transition: "left 0.2s ease",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
+            }} />
+          </button>
+        </div>
+      </Card>
 
       {/* Data Management */}
       <Card style={{ marginBottom: 14, padding: 16 }}>

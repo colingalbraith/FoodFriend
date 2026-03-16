@@ -1,3 +1,7 @@
+import { RECIPES_BATCH_1 } from "./recipes1";
+import { RECIPES_BATCH_2 } from "./recipes2";
+import { RECIPES_BATCH_3 } from "./recipes3";
+
 export const STORAGE_KEYS = {
   items: "ff2-items",
   meals: "ff2-meals",
@@ -1907,6 +1911,9 @@ export const DEFAULT_RECIPES = [
     calories: "280", protein: "5", time: "55 min",
     notes: "Use overripe bananas — the browner the better.",
   },
+  ...RECIPES_BATCH_1,
+  ...RECIPES_BATCH_2,
+  ...RECIPES_BATCH_3,
 ];
 
 export const DEFAULT_STAPLES = [

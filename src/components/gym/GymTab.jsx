@@ -6,13 +6,74 @@ import Modal from "../ui/Modal";
 const MUSCLE_GROUPS = ["Chest", "Back", "Shoulders", "Arms", "Legs", "Core", "Cardio"];
 
 const EXERCISES = {
-  Chest: ["Bench Press", "Incline Press", "Decline Press", "Dumbbell Bench", "Incline Dumbbell Press", "Dumbbell Flyes", "Cable Crossover", "Push-ups", "Machine Chest Press", "Pec Deck", "Dips (Chest)", "Landmine Press"],
-  Back: ["Deadlift", "Pull-ups", "Barbell Row", "Lat Pulldown", "Cable Row", "Seated Row", "T-Bar Row", "Dumbbell Row", "Chest-Supported Row", "Pendlay Row", "Rack Pull", "Straight-Arm Pulldown"],
-  Shoulders: ["Overhead Press", "Dumbbell Shoulder Press", "Lateral Raise", "Cable Lateral Raise", "Face Pull", "Arnold Press", "Front Raise", "Rear Delt Fly", "Upright Row", "Military Press", "Shrugs"],
-  Arms: ["Bicep Curl", "Hammer Curl", "Preacher Curl", "EZ Bar Curl", "Cable Curl", "Concentration Curl", "Tricep Pushdown", "Skull Crusher", "Overhead Tricep Extension", "Tricep Dip", "Close-Grip Bench", "Reverse Curl"],
-  Legs: ["Squat", "Front Squat", "Leg Press", "Hack Squat", "Romanian Deadlift", "Bulgarian Split Squat", "Lunges", "Leg Extension", "Leg Curl", "Hip Thrust", "Goblet Squat", "Calf Raise", "Sumo Deadlift"],
-  Core: ["Plank", "Crunches", "Bicycle Crunch", "Leg Raise", "Hanging Leg Raise", "Russian Twist", "Cable Crunch", "Ab Rollout", "Dead Bug", "Mountain Climbers", "Woodchop", "Pallof Press"],
-  Cardio: ["Running", "Cycling", "Rowing", "Jump Rope", "Stair Climber", "Elliptical", "Swimming", "Walking", "Sprints", "Battle Ropes"],
+  Chest: [
+    "Bench Press", "Incline Bench Press", "Decline Bench Press", "Dumbbell Bench Press", "Incline Dumbbell Press", "Decline Dumbbell Press",
+    "Dumbbell Flyes", "Incline Dumbbell Flyes", "Cable Flyes", "Cable Crossover", "Low Cable Crossover",
+    "Push-ups", "Diamond Push-ups", "Wide Push-ups", "Decline Push-ups", "Weighted Push-ups",
+    "Machine Chest Press", "Seated Chest Press", "Pec Deck", "Dips (Chest)", "Landmine Press",
+    "Floor Press", "Svend Press", "Plate Squeeze Press", "Smith Machine Bench",
+  ],
+  Back: [
+    "Deadlift", "Conventional Deadlift", "Sumo Deadlift", "Trap Bar Deadlift", "Rack Pull",
+    "Pull-ups", "Chin-ups", "Wide Grip Pull-ups", "Weighted Pull-ups", "Neutral Grip Pull-ups",
+    "Barbell Row", "Pendlay Row", "Dumbbell Row", "Kroc Row", "Meadows Row",
+    "T-Bar Row", "Chest-Supported Row", "Seated Cable Row", "Cable Row", "Single Arm Cable Row",
+    "Lat Pulldown", "Wide Grip Pulldown", "Close Grip Pulldown", "Reverse Grip Pulldown",
+    "Straight-Arm Pulldown", "Pullover", "Inverted Row", "Hyperextension", "Good Morning",
+  ],
+  Shoulders: [
+    "Overhead Press", "Barbell Overhead Press", "Seated Overhead Press", "Dumbbell Shoulder Press", "Seated Dumbbell Press",
+    "Arnold Press", "Push Press", "Military Press", "Behind-the-Neck Press", "Z Press",
+    "Lateral Raise", "Cable Lateral Raise", "Dumbbell Lateral Raise", "Machine Lateral Raise",
+    "Front Raise", "Dumbbell Front Raise", "Plate Front Raise", "Cable Front Raise",
+    "Rear Delt Fly", "Reverse Pec Deck", "Face Pull", "Band Pull-Apart",
+    "Upright Row", "Cable Upright Row", "Shrugs", "Barbell Shrugs", "Dumbbell Shrugs", "Trap Bar Shrugs",
+    "Lu Raise", "Bradford Press", "Landmine Lateral Raise",
+  ],
+  Arms: [
+    "Barbell Curl", "EZ Bar Curl", "Dumbbell Curl", "Hammer Curl", "Preacher Curl",
+    "Incline Dumbbell Curl", "Concentration Curl", "Cable Curl", "Spider Curl", "Reverse Curl",
+    "Bayesian Curl", "Drag Curl", "21s", "Cross Body Curl", "Zottman Curl",
+    "Tricep Pushdown", "Rope Pushdown", "Skull Crusher", "Overhead Tricep Extension", "Dumbbell Overhead Extension",
+    "Cable Overhead Extension", "Tricep Dip", "Bench Dip", "Close-Grip Bench Press", "JM Press",
+    "Kickback", "Cable Kickback", "Diamond Push-ups", "Tate Press",
+    "Wrist Curl", "Reverse Wrist Curl", "Farmer's Walk",
+  ],
+  Legs: [
+    "Back Squat", "Front Squat", "Goblet Squat", "Hack Squat", "Zercher Squat",
+    "Smith Machine Squat", "Box Squat", "Pause Squat", "Safety Bar Squat",
+    "Leg Press", "Single Leg Press", "Narrow Stance Leg Press",
+    "Romanian Deadlift", "Stiff Leg Deadlift", "Single Leg RDL",
+    "Bulgarian Split Squat", "Walking Lunges", "Reverse Lunges", "Lateral Lunges", "Step-ups",
+    "Leg Extension", "Leg Curl", "Seated Leg Curl", "Nordic Curl",
+    "Hip Thrust", "Barbell Hip Thrust", "Single Leg Hip Thrust", "Glute Bridge", "Cable Pull-Through",
+    "Sumo Deadlift", "Sumo Squat",
+    "Standing Calf Raise", "Seated Calf Raise", "Donkey Calf Raise", "Single Leg Calf Raise",
+    "Sissy Squat", "Leg Press Calf Raise", "Wall Sit",
+  ],
+  Core: [
+    "Plank", "Side Plank", "Plank Shoulder Tap", "RKC Plank",
+    "Crunches", "Bicycle Crunch", "Reverse Crunch", "Decline Crunch",
+    "Leg Raise", "Hanging Leg Raise", "Lying Leg Raise", "Knee Raise",
+    "Russian Twist", "Weighted Russian Twist",
+    "Cable Crunch", "Cable Woodchop", "Pallof Press",
+    "Ab Rollout", "Ab Wheel", "Barbell Rollout",
+    "Dead Bug", "Bird Dog", "Bear Crawl",
+    "Mountain Climbers", "Flutter Kicks", "Scissor Kicks", "V-ups", "Toe Touches",
+    "Dragon Flag", "L-Sit", "Hollow Body Hold", "Farmer's Walk", "Suitcase Carry",
+  ],
+  Cardio: [
+    "Running", "Jogging", "Sprints", "Hill Sprints", "Interval Running",
+    "Cycling", "Stationary Bike", "Spin Class", "Assault Bike",
+    "Rowing", "Rowing Machine", "Stair Climber", "StairMaster",
+    "Elliptical", "Arc Trainer",
+    "Jump Rope", "Double Unders",
+    "Swimming", "Laps", "Treading Water",
+    "Walking", "Incline Walking", "Rucking",
+    "Battle Ropes", "Box Jumps", "Burpees", "Jumping Jacks",
+    "Sled Push", "Sled Pull", "Tire Flip", "Kettlebell Swing",
+    "HIIT Circuit", "Tabata",
+  ],
 };
 
 const GROUP_COLORS = { Chest: "#d48a7b", Back: "#8ab4d4", Shoulders: "#c4a86a", Arms: "#b89878", Legs: "#7cb87c", Core: "#d4a87b", Cardio: "#8ac4a8" };
@@ -59,64 +120,120 @@ function linearRegression(pts) {
 
 function BodyPicker({ selected, onToggle }) {
   const isActive = (g) => selected.includes(g);
-  const fill = (g) => isActive(g) ? "var(--accent)" : "#e0d0b8";
-  const opacity = (g) => isActive(g) ? 0.85 : 0.4;
+  const fill = (g) => isActive(g) ? "var(--accent)" : "#c8b8a0";
+  const glow = (g) => isActive(g) ? "drop-shadow(0 0 8px rgba(196,149,106,0.5))" : "none";
 
   return (
-    <div style={{ position: "relative", width: 180, height: 320, margin: "0 auto" }}>
-      <svg viewBox="0 0 180 320" width="180" height="320">
+    <div style={{ position: "relative", width: 220, height: 340, margin: "0 auto" }}>
+      <svg viewBox="0 0 220 340" width="220" height="340">
+        {/* Shadow */}
+        <ellipse cx="110" cy="332" rx="50" ry="6" fill="#d4c0a8" opacity="0.15" />
+
         {/* Head */}
-        <circle cx="90" cy="32" r="20" fill="#d4c0a8" opacity="0.5" />
+        <ellipse cx="110" cy="30" rx="20" ry="24" fill="#c8b8a0" opacity="0.55" />
+        <ellipse cx="89" cy="30" rx="4" ry="6" fill="#c8b8a0" opacity="0.4" />
+        <ellipse cx="131" cy="30" rx="4" ry="6" fill="#c8b8a0" opacity="0.4" />
 
         {/* Neck */}
-        <rect x="82" y="52" width="16" height="14" rx="4" fill="#d4c0a8" opacity="0.4" />
+        <path d="M98 52 Q98 58 96 64 L124 64 Q122 58 122 52" fill="#c8b8a0" opacity="0.45" />
 
-        {/* Shoulders — tappable */}
-        <ellipse cx="52" cy="78" rx="20" ry="12" fill={fill("Shoulders")} opacity={opacity("Shoulders")} onClick={() => onToggle("Shoulders")} style={{ cursor: "pointer" }} />
-        <ellipse cx="128" cy="78" rx="20" ry="12" fill={fill("Shoulders")} opacity={opacity("Shoulders")} onClick={() => onToggle("Shoulders")} style={{ cursor: "pointer" }} />
+        {/* Trapezius */}
+        <path d="M96 62 Q74 66 42 76 L42 84 Q70 74 100 72 L120 72 Q150 74 178 84 L178 76 Q146 66 124 62 Z"
+          fill={fill("Shoulders")} opacity={isActive("Shoulders") ? 0.75 : 0.45}
+          onClick={() => onToggle("Shoulders")} style={{ cursor: "pointer", filter: glow("Shoulders") }} />
 
-        {/* Chest — tappable */}
-        <rect x="58" y="72" width="64" height="40" rx="10" fill={fill("Chest")} opacity={opacity("Chest")} onClick={() => onToggle("Chest")} style={{ cursor: "pointer" }} />
+        {/* Shoulders — big round delts */}
+        <ellipse cx="40" cy="84" rx="20" ry="18" fill={fill("Shoulders")} opacity={isActive("Shoulders") ? 0.85 : 0.45}
+          onClick={() => onToggle("Shoulders")} style={{ cursor: "pointer", filter: glow("Shoulders") }} />
+        <ellipse cx="180" cy="84" rx="20" ry="18" fill={fill("Shoulders")} opacity={isActive("Shoulders") ? 0.85 : 0.45}
+          onClick={() => onToggle("Shoulders")} style={{ cursor: "pointer", filter: glow("Shoulders") }} />
 
-        {/* Core — tappable */}
-        <rect x="65" y="114" width="50" height="48" rx="8" fill={fill("Core")} opacity={opacity("Core")} onClick={() => onToggle("Core")} style={{ cursor: "pointer" }} />
+        {/* Chest — wide thick pecs */}
+        <path d="M60 74 Q80 68 110 70 Q140 68 160 74 Q164 92 156 104 Q138 112 110 110 Q82 112 64 104 Q56 92 60 74 Z"
+          fill={fill("Chest")} opacity={isActive("Chest") ? 0.85 : 0.45}
+          onClick={() => onToggle("Chest")} style={{ cursor: "pointer", filter: glow("Chest") }} />
+        <line x1="110" y1="76" x2="110" y2="108" stroke={isActive("Chest") ? "#b08060" : "#ccc0b0"} strokeWidth="1" opacity="0.25" />
 
-        {/* Arms — tappable */}
-        <rect x="28" y="82" width="22" height="60" rx="8" fill={fill("Arms")} opacity={opacity("Arms")} onClick={() => onToggle("Arms")} style={{ cursor: "pointer" }} />
-        <rect x="130" y="82" width="22" height="60" rx="8" fill={fill("Arms")} opacity={opacity("Arms")} onClick={() => onToggle("Arms")} style={{ cursor: "pointer" }} />
+        {/* Core — thick torso */}
+        <path d="M68 108 Q66 120 68 140 Q70 158 76 170 L96 170 Q100 166 110 166 Q120 166 124 170 L144 170 Q150 158 152 140 Q154 120 152 108 Q140 114 110 112 Q80 114 68 108 Z"
+          fill={fill("Core")} opacity={isActive("Core") ? 0.8 : 0.45}
+          onClick={() => onToggle("Core")} style={{ cursor: "pointer", filter: glow("Core") }} />
+        <line x1="110" y1="112" x2="110" y2="166" stroke={isActive("Core") ? "#b08060" : "#b0a090"} strokeWidth="0.8" opacity="0.35" />
+        {[124, 138, 152].map(y => (
+          <line key={y} x1="84" y1={y} x2="136" y2={y} stroke={isActive("Core") ? "#b08060" : "#b0a090"} strokeWidth="0.6" opacity="0.3" />
+        ))}
 
-        {/* Forearms */}
-        <rect x="24" y="142" width="18" height="46" rx="6" fill={fill("Arms")} opacity={opacity("Arms") * 0.7} onClick={() => onToggle("Arms")} style={{ cursor: "pointer" }} />
-        <rect x="138" y="142" width="18" height="46" rx="6" fill={fill("Arms")} opacity={opacity("Arms") * 0.7} onClick={() => onToggle("Arms")} style={{ cursor: "pointer" }} />
-
-        {/* Back — invisible from front, shown as overlay on torso */}
+        {/* Back overlay */}
         {isActive("Back") && (
-          <rect x="62" y="76" width="56" height="36" rx="8" fill="none" stroke="var(--accent)" strokeWidth="2" strokeDasharray="4 3" opacity="0.6" />
+          <path d="M64 76 Q86 70 110 72 Q134 70 156 76 Q158 94 152 106 Q136 114 110 112 Q84 114 68 106 Q62 94 64 76 Z"
+            fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeDasharray="6 4" opacity="0.45" />
         )}
 
-        {/* Legs — tappable */}
-        <rect x="60" y="165" width="26" height="80" rx="8" fill={fill("Legs")} opacity={opacity("Legs")} onClick={() => onToggle("Legs")} style={{ cursor: "pointer" }} />
-        <rect x="94" y="165" width="26" height="80" rx="8" fill={fill("Legs")} opacity={opacity("Legs")} onClick={() => onToggle("Legs")} style={{ cursor: "pointer" }} />
+        {/* Upper arms — thick */}
+        <path d="M36 96 Q18 102 14 114 Q10 136 14 156 Q22 164 32 158 Q44 150 48 134 Q50 114 46 96 Z"
+          fill={fill("Arms")} opacity={isActive("Arms") ? 0.8 : 0.45}
+          onClick={() => onToggle("Arms")} style={{ cursor: "pointer", filter: glow("Arms") }} />
+        <path d="M184 96 Q202 102 206 114 Q210 136 206 156 Q198 164 188 158 Q176 150 172 134 Q170 114 174 96 Z"
+          fill={fill("Arms")} opacity={isActive("Arms") ? 0.8 : 0.45}
+          onClick={() => onToggle("Arms")} style={{ cursor: "pointer", filter: glow("Arms") }} />
 
-        {/* Lower legs */}
-        <rect x="62" y="248" width="20" height="52" rx="6" fill={fill("Legs")} opacity={opacity("Legs") * 0.7} onClick={() => onToggle("Legs")} style={{ cursor: "pointer" }} />
-        <rect x="98" y="248" width="20" height="52" rx="6" fill={fill("Legs")} opacity={opacity("Legs") * 0.7} onClick={() => onToggle("Legs")} style={{ cursor: "pointer" }} />
+        {/* Forearms */}
+        <path d="M14 158 Q6 164 4 176 Q2 194 6 210 Q14 216 22 210 Q30 200 32 184 Q34 168 28 158 Z"
+          fill={fill("Arms")} opacity={isActive("Arms") ? 0.65 : 0.35}
+          onClick={() => onToggle("Arms")} style={{ cursor: "pointer" }} />
+        <path d="M206 158 Q214 164 216 176 Q218 194 214 210 Q206 216 198 210 Q190 200 188 184 Q186 168 192 158 Z"
+          fill={fill("Arms")} opacity={isActive("Arms") ? 0.65 : 0.35}
+          onClick={() => onToggle("Arms")} style={{ cursor: "pointer" }} />
+
+        {/* Hands */}
+        <ellipse cx="8" cy="218" rx="8" ry="10" fill="#c8b8a0" opacity="0.35" />
+        <ellipse cx="212" cy="218" rx="8" ry="10" fill="#c8b8a0" opacity="0.35" />
+
+        {/* Upper legs — massive quads */}
+        <path d="M76 172 Q64 182 54 208 Q46 236 46 254 Q52 264 66 258 Q82 250 88 228 Q94 200 94 178 Z"
+          fill={fill("Legs")} opacity={isActive("Legs") ? 0.8 : 0.45}
+          onClick={() => onToggle("Legs")} style={{ cursor: "pointer", filter: glow("Legs") }} />
+        <path d="M144 172 Q156 182 166 208 Q174 236 174 254 Q168 264 154 258 Q138 250 132 228 Q126 200 126 178 Z"
+          fill={fill("Legs")} opacity={isActive("Legs") ? 0.8 : 0.45}
+          onClick={() => onToggle("Legs")} style={{ cursor: "pointer", filter: glow("Legs") }} />
+
+        {/* Knees */}
+        <ellipse cx="56" cy="260" rx="12" ry="9" fill={fill("Legs")} opacity={isActive("Legs") ? 0.5 : 0.35}
+          onClick={() => onToggle("Legs")} style={{ cursor: "pointer" }} />
+        <ellipse cx="164" cy="260" rx="12" ry="9" fill={fill("Legs")} opacity={isActive("Legs") ? 0.5 : 0.35}
+          onClick={() => onToggle("Legs")} style={{ cursor: "pointer" }} />
+
+        {/* Calves — thick */}
+        <path d="M50 268 Q40 280 38 298 Q40 314 48 322 Q56 326 64 322 Q72 312 72 294 Q72 278 66 268 Z"
+          fill={fill("Legs")} opacity={isActive("Legs") ? 0.65 : 0.35}
+          onClick={() => onToggle("Legs")} style={{ cursor: "pointer" }} />
+        <path d="M170 268 Q180 280 182 298 Q180 314 172 322 Q164 326 156 322 Q148 312 148 294 Q148 278 154 268 Z"
+          fill={fill("Legs")} opacity={isActive("Legs") ? 0.65 : 0.35}
+          onClick={() => onToggle("Legs")} style={{ cursor: "pointer" }} />
+
+        {/* Feet */}
+        <ellipse cx="48" cy="328" rx="14" ry="6" fill="#c8b8a0" opacity="0.35" />
+        <ellipse cx="172" cy="328" rx="14" ry="6" fill="#c8b8a0" opacity="0.35" />
       </svg>
 
-      {/* Labels */}
-      {[
-        { g: "Shoulders", x: 90, y: 78 },
-        { g: "Chest", x: 90, y: 94 },
-        { g: "Core", x: 90, y: 138 },
-        { g: "Arms", x: 22, y: 108 },
-        { g: "Legs", x: 90, y: 205 },
-      ].map(l => isActive(l.g) && (
-        <div key={l.g} style={{
-          position: "absolute", left: l.x, top: l.y, transform: "translate(-50%, -50%)",
-          fontSize: 9, fontWeight: 800, color: "white", textShadow: "0 1px 3px rgba(0,0,0,0.3)",
-          pointerEvents: "none", textTransform: "uppercase", letterSpacing: 0.5,
-        }}>{l.g}</div>
-      ))}
+      {/* Labels — rendered as SVG text for precise centering */}
+      <svg viewBox="0 0 220 340" width="220" height="340" style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none" }}>
+        {[
+          { g: "Shoulders", x: 110, y: 80 },
+          { g: "Chest", x: 110, y: 94 },
+          { g: "Core", x: 110, y: 142 },
+          { g: "Arms", x: 30, y: 128 },
+          { g: "Arms", x: 190, y: 128, key: "arms-r" },
+          { g: "Legs", x: 70, y: 216 },
+          { g: "Legs", x: 150, y: 216, key: "legs-r" },
+        ].map(l => isActive(l.g) && (
+          <text key={l.key || l.g} x={l.x} y={l.y} textAnchor="middle" dominantBaseline="central"
+            fontSize="8" fontWeight="800" fill="white"
+            style={{ textTransform: "uppercase", letterSpacing: "0.5px" }}>
+            <tspan>{l.g.toUpperCase()}</tspan>
+          </text>
+        ))}
+      </svg>
     </div>
   );
 }
@@ -667,7 +784,6 @@ export default function GymTab({ gymLog, saveGymLog }) {
             value={exerciseSearch}
             onChange={e => setExerciseSearch(e.target.value)}
             style={{ width: "100%", marginBottom: 12, boxSizing: "border-box" }}
-            autoFocus
           />
           {filteredRecent.length > 0 && (
             <div style={{ marginBottom: 14 }}>
