@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { makeId } from "../../utils/itemHelpers";
 import Card from "../ui/Card";
 import Modal from "../ui/Modal";
@@ -6,18 +6,55 @@ import Modal from "../ui/Modal";
 const MUSCLE_GROUPS = ["Chest", "Back", "Shoulders", "Arms", "Legs", "Core", "Cardio"];
 
 const EXERCISES = {
-  Chest: ["Bench Press", "Incline Press", "Dumbbell Flyes", "Push-ups", "Cable Crossover"],
-  Back: ["Deadlift", "Pull-ups", "Barbell Row", "Lat Pulldown", "Cable Row"],
-  Shoulders: ["Overhead Press", "Lateral Raise", "Face Pull", "Arnold Press"],
-  Arms: ["Bicep Curl", "Tricep Pushdown", "Hammer Curl", "Skull Crusher"],
-  Legs: ["Squat", "Leg Press", "Romanian Deadlift", "Leg Curl", "Lunges", "Calf Raise"],
-  Core: ["Plank", "Crunches", "Leg Raise", "Russian Twist"],
-  Cardio: ["Running", "Cycling", "Rowing", "Jump Rope"],
+  Chest: ["Bench Press", "Incline Press", "Decline Press", "Dumbbell Bench", "Incline Dumbbell Press", "Dumbbell Flyes", "Cable Crossover", "Push-ups", "Machine Chest Press", "Pec Deck", "Dips (Chest)", "Landmine Press"],
+  Back: ["Deadlift", "Pull-ups", "Barbell Row", "Lat Pulldown", "Cable Row", "Seated Row", "T-Bar Row", "Dumbbell Row", "Chest-Supported Row", "Pendlay Row", "Rack Pull", "Straight-Arm Pulldown"],
+  Shoulders: ["Overhead Press", "Dumbbell Shoulder Press", "Lateral Raise", "Cable Lateral Raise", "Face Pull", "Arnold Press", "Front Raise", "Rear Delt Fly", "Upright Row", "Military Press", "Shrugs"],
+  Arms: ["Bicep Curl", "Hammer Curl", "Preacher Curl", "EZ Bar Curl", "Cable Curl", "Concentration Curl", "Tricep Pushdown", "Skull Crusher", "Overhead Tricep Extension", "Tricep Dip", "Close-Grip Bench", "Reverse Curl"],
+  Legs: ["Squat", "Front Squat", "Leg Press", "Hack Squat", "Romanian Deadlift", "Bulgarian Split Squat", "Lunges", "Leg Extension", "Leg Curl", "Hip Thrust", "Goblet Squat", "Calf Raise", "Sumo Deadlift"],
+  Core: ["Plank", "Crunches", "Bicycle Crunch", "Leg Raise", "Hanging Leg Raise", "Russian Twist", "Cable Crunch", "Ab Rollout", "Dead Bug", "Mountain Climbers", "Woodchop", "Pallof Press"],
+  Cardio: ["Running", "Cycling", "Rowing", "Jump Rope", "Stair Climber", "Elliptical", "Swimming", "Walking", "Sprints", "Battle Ropes"],
 };
+
+const GROUP_COLORS = { Chest: "#d48a7b", Back: "#8ab4d4", Shoulders: "#c4a86a", Arms: "#b89878", Legs: "#7cb87c", Core: "#d4a87b", Cardio: "#8ac4a8" };
+
+/* Inject keyframes once */
+if (typeof document !== "undefined" && !document.getElementById("gym-tab-anims")) {
+  const style = document.createElement("style");
+  style.id = "gym-tab-anims";
+  style.textContent = `
+    @keyframes bounceIn { 0%{transform:scale(0.3);opacity:0} 50%{transform:scale(1.08)} 100%{transform:scale(1);opacity:1} }
+    @keyframes popIn { 0%{transform:scale(0.5);opacity:0} 100%{transform:scale(1);opacity:1} }
+    @keyframes fadeIn { 0%{opacity:0;transform:translateY(6px)} 100%{opacity:1;transform:translateY(0)} }
+  `;
+  document.head.appendChild(style);
+}
 
 function todayKey() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function getOverloadSuggestion(name, gymLog) {
+  const sessions = (gymLog || []).filter(e => e.name === name && e.sets?.length > 0).slice(0, 3);
+  if (sessions.length === 0) return null;
+  const last = sessions[0];
+  const maxW = Math.max(...last.sets.map(s => Number(s.weight) || 0));
+  const maxR = Math.max(...last.sets.filter(s => Number(s.weight) === maxW).map(s => Number(s.reps) || 0));
+  if (maxR >= 8) return { exercise: name, current: maxW, suggested: maxW + 5, reason: `Hit ${maxR} reps at ${maxW}lb — go up!`, up: true };
+  if (maxR < 5) return { exercise: name, current: maxW, suggested: maxW, reason: `Build to 8 reps at ${maxW}lb`, up: false };
+  return { exercise: name, current: maxW, suggested: maxW, reason: `${maxR} reps at ${maxW}lb — keep pushing`, up: false };
+}
+
+function linearRegression(pts) {
+  const n = pts.length;
+  if (n < 2) return null;
+  let sx = 0, sy = 0, sxy = 0, sxx = 0;
+  for (let i = 0; i < n; i++) { sx += i; sy += pts[i]; sxy += i * pts[i]; sxx += i * i; }
+  const denom = n * sxx - sx * sx;
+  if (denom === 0) return null;
+  const m = (n * sxy - sx * sy) / denom;
+  const b = (sy - m * sx) / n;
+  return { m, b };
 }
 
 function BodyPicker({ selected, onToggle }) {
@@ -93,6 +130,8 @@ export default function GymTab({ gymLog, saveGymLog }) {
   const [weight, setWeight] = useState("");
   const [reps, setReps] = useState("");
   const [sessionStart, setSessionStart] = useState(null);
+  const [exerciseSearch, setExerciseSearch] = useState("");
+  const [trendExercise, setTrendExercise] = useState(null);
   const weightRef = useRef(null);
 
   const today = todayKey();
@@ -144,6 +183,7 @@ export default function GymTab({ gymLog, saveGymLog }) {
     }
     setWeight(lastWeight(name)); setReps(lastReps(name));
     setPicking(false);
+    setExerciseSearch("");
     setTimeout(() => weightRef.current?.focus(), 150);
   }
 
@@ -203,6 +243,46 @@ export default function GymTab({ gymLog, saveGymLog }) {
     ? Object.entries(EXERCISES).filter(([g]) => sessionGroups.includes(g))
     : Object.entries(EXERCISES);
 
+  // --- NEW: Progressive overload suggestions (exercises used in last 7 days) ---
+  const overloadSuggestions = useMemo(() => {
+    const last7Names = [...new Set((gymLog || []).filter(e => last7.includes(e.date) && e.sets?.length > 0).map(e => e.name))];
+    return last7Names.map(n => getOverloadSuggestion(n, gymLog)).filter(Boolean);
+  }, [gymLog, last7]);
+
+  // --- NEW: Muscle group distribution (last 7 days) ---
+  const groupDistribution = useMemo(() => {
+    const counts = {};
+    MUSCLE_GROUPS.forEach(g => { counts[g] = 0; });
+    (gymLog || []).filter(e => last7.includes(e.date)).forEach(e => {
+      if (e.group && counts[e.group] !== undefined) counts[e.group] += (e.sets?.length || 0);
+    });
+    return counts;
+  }, [gymLog, last7]);
+
+  const totalGroupSets = Object.values(groupDistribution).reduce((a, b) => a + b, 0);
+
+  // --- NEW: Exercise trend data ---
+  const activeTrend = trendExercise || (uniqueExercises.length > 0 ? uniqueExercises[0] : null);
+
+  const trendData = useMemo(() => {
+    if (!activeTrend) return [];
+    return (gymLog || [])
+      .filter(e => e.name === activeTrend && e.sets?.length > 0)
+      .slice(0, 10)
+      .reverse()
+      .map(e => Math.max(...e.sets.map(s => Number(s.weight) || 0)));
+  }, [gymLog, activeTrend]);
+
+  // --- Search-filtered exercises for picker ---
+  const searchLower = exerciseSearch.toLowerCase().trim();
+  const filteredSessionExercises = searchLower
+    ? sessionExercises.map(([group, exList]) => [group, exList.filter(ex => ex.toLowerCase().includes(searchLower))]).filter(([, exList]) => exList.length > 0)
+    : sessionExercises;
+
+  const filteredRecent = searchLower
+    ? recentExercises.filter(n => n.toLowerCase().includes(searchLower))
+    : recentExercises;
+
   return (
     <div style={{ animation: "fadeIn 0.3s ease-out" }}>
       <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
@@ -213,7 +293,7 @@ export default function GymTab({ gymLog, saveGymLog }) {
 
       {/* ─── LOG ─── */}
       {section === "log" && !sessionActive && (
-        <>
+        <div style={{ animation: "fadeIn 0.2s ease-out" }}>
           <div style={{ fontFamily: "var(--display)", fontSize: 24, fontWeight: 700, marginBottom: 4, textAlign: "center" }}>
             {hasSession ? "Today's Workout" : "What are we hitting?"}
           </div>
@@ -260,7 +340,7 @@ export default function GymTab({ gymLog, saveGymLog }) {
                         <div style={{ fontWeight: 700, fontSize: 14 }}>{entry.name}</div>
                         <div style={{ display: "flex", gap: 5, marginTop: 4, flexWrap: "wrap" }}>
                           {(entry.sets || []).map((s, j) => (
-                            <span key={j} style={{ fontSize: 11, fontWeight: 600, color: "var(--muted)" }}>{s.weight}×{s.reps}</span>
+                            <span key={j} style={{ fontSize: 11, fontWeight: 600, color: "var(--muted)", animation: `popIn 0.15s ease-out ${j * 40}ms both` }}>{s.weight}×{s.reps}</span>
                           ))}
                         </div>
                       </div>
@@ -270,12 +350,12 @@ export default function GymTab({ gymLog, saveGymLog }) {
               </div>
             </>
           )}
-        </>
+        </div>
       )}
 
       {/* ─── LIVE SESSION ─── */}
       {section === "log" && sessionActive && (
-        <>
+        <div style={{ animation: "fadeIn 0.2s ease-out" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
             <div style={{ fontFamily: "var(--display)", fontSize: 24, fontWeight: 700 }}>Live Session</div>
             <button className="cozy-btn danger" style={{ fontSize: 11, padding: "6px 14px", minHeight: 32 }} onClick={endSession}>
@@ -292,7 +372,7 @@ export default function GymTab({ gymLog, saveGymLog }) {
               {activeEntry.sets?.length > 0 && (
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 10 }}>
                   {activeEntry.sets.map((s, i) => (
-                    <div key={i} style={{ background: "#edf5ed", borderRadius: 8, padding: "5px 10px", fontSize: 13, fontWeight: 700, color: "#4a7a4a" }}>
+                    <div key={i} style={{ background: "#edf5ed", borderRadius: 8, padding: "5px 10px", fontSize: 13, fontWeight: 700, color: "#4a7a4a", animation: `popIn 0.15s ease-out ${i * 40}ms both` }}>
                       {s.weight}lb × {s.reps}
                     </div>
                   ))}
@@ -335,11 +415,11 @@ export default function GymTab({ gymLog, saveGymLog }) {
                       <div style={{ flex: 1, cursor: "pointer" }} onClick={() => { setActiveEntry(entry); setWeight(lastWeight(entry.name)); setReps(""); }}>
                         <div style={{ fontWeight: 700, fontSize: 14 }}>
                           {entry.name}
-                          {isPR && <span style={{ fontSize: 10, fontWeight: 800, color: "#d48a7b", marginLeft: 6 }}>PR</span>}
+                          {isPR && <span style={{ fontSize: 10, fontWeight: 800, color: "#d48a7b", marginLeft: 6, display: "inline-block", animation: "bounceIn 0.4s ease-out" }}>PR</span>}
                         </div>
                         <div style={{ display: "flex", gap: 5, marginTop: 4, flexWrap: "wrap" }}>
                           {(entry.sets || []).map((s, j) => (
-                            <span key={j} style={{ fontSize: 11, fontWeight: 600, color: "var(--muted)" }}>{s.weight}×{s.reps}</span>
+                            <span key={j} style={{ fontSize: 11, fontWeight: 600, color: "var(--muted)", animation: `popIn 0.15s ease-out ${j * 40}ms both` }}>{s.weight}×{s.reps}</span>
                           ))}
                           {(!entry.sets || entry.sets.length === 0) && <span style={{ fontSize: 11, color: "#ccc" }}>No sets</span>}
                         </div>
@@ -351,15 +431,16 @@ export default function GymTab({ gymLog, saveGymLog }) {
               })}
             </div>
           )}
-        </>
+        </div>
       )}
 
       {/* ─── STATS ─── */}
       {section === "stats" && (
-        <>
+        <div style={{ animation: "fadeIn 0.2s ease-out" }}>
           <div style={{ fontFamily: "var(--display)", fontSize: 24, fontWeight: 700, marginBottom: 14 }}>Gym Stats</div>
 
-          <Card style={{ padding: 16, marginBottom: 14 }}>
+          {/* Weekly Volume */}
+          <Card style={{ padding: 16, marginBottom: 14, animation: `fadeIn 0.2s ease-out 0ms both` }}>
             <div style={{ fontSize: 12, fontWeight: 800, color: "var(--muted)", marginBottom: 12, textTransform: "uppercase", letterSpacing: 0.3 }}>Weekly Volume</div>
             <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 100 }}>
               {weekData.map(d => {
@@ -377,7 +458,8 @@ export default function GymTab({ gymLog, saveGymLog }) {
             </div>
           </Card>
 
-          <Card style={{ padding: 16, marginBottom: 14 }}>
+          {/* Activity Heatmap */}
+          <Card style={{ padding: 16, marginBottom: 14, animation: `fadeIn 0.2s ease-out 60ms both` }}>
             <div style={{ fontSize: 12, fontWeight: 800, color: "var(--muted)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.3 }}>Activity</div>
             <div style={{ display: "flex", gap: 8, justifyContent: "space-around" }}>
               {weekData.map(d => (
@@ -391,8 +473,9 @@ export default function GymTab({ gymLog, saveGymLog }) {
             </div>
           </Card>
 
+          {/* Personal Records */}
           {uniqueExercises.filter(n => getPR(n) > 0).length > 0 && (
-            <Card style={{ padding: 16, marginBottom: 14 }}>
+            <Card style={{ padding: 16, marginBottom: 14, animation: `fadeIn 0.2s ease-out 120ms both` }}>
               <div style={{ fontSize: 12, fontWeight: 800, color: "var(--muted)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.3 }}>Personal Records</div>
               {uniqueExercises.filter(n => getPR(n) > 0).map(name => {
                 const progress = getProgress(name);
@@ -400,7 +483,7 @@ export default function GymTab({ gymLog, saveGymLog }) {
                   <div key={name} style={{ marginBottom: 10 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
                       <span style={{ fontWeight: 700, fontSize: 13 }}>{name}</span>
-                      <span style={{ fontWeight: 800, fontSize: 14, color: "var(--accent)" }}>{getPR(name)} lb</span>
+                      <span style={{ fontWeight: 800, fontSize: 14, color: "var(--accent)", display: "inline-block", animation: "bounceIn 0.4s ease-out" }}>{getPR(name)} lb</span>
                     </div>
                     {progress.length > 1 && (
                       <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 20 }}>
@@ -417,7 +500,8 @@ export default function GymTab({ gymLog, saveGymLog }) {
             </Card>
           )}
 
-          <Card style={{ padding: 16 }}>
+          {/* 7-Day Summary */}
+          <Card style={{ padding: 16, marginBottom: 14, animation: `fadeIn 0.2s ease-out 180ms both` }}>
             <div style={{ fontSize: 12, fontWeight: 800, color: "var(--muted)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.3 }}>7-Day Summary</div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               {[
@@ -433,17 +517,163 @@ export default function GymTab({ gymLog, saveGymLog }) {
               ))}
             </div>
           </Card>
-        </>
+
+          {/* ─── NEW: Progressive Overload Suggestions ─── */}
+          {overloadSuggestions.length > 0 && (
+            <Card style={{ padding: 16, marginBottom: 14, animation: `fadeIn 0.2s ease-out 240ms both` }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: "var(--muted)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.3 }}>Progressive Overload</div>
+              {overloadSuggestions.map((s, i) => (
+                <div key={s.exercise} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: i < overloadSuggestions.length - 1 ? 10 : 0, animation: `fadeIn 0.2s ease-out ${i * 60}ms both` }}>
+                  {s.up ? (
+                    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" style={{ flexShrink: 0 }}>
+                      <circle cx="11" cy="11" r="11" fill="#e6f4e6" />
+                      <path d="M11 6 L15 12 L13 12 L13 16 L9 16 L9 12 L7 12 Z" fill="#4a9a4a" />
+                    </svg>
+                  ) : (
+                    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" style={{ flexShrink: 0 }}>
+                      <circle cx="11" cy="11" r="11" fill="#f0ece4" />
+                      <path d="M7 11 L15 11" stroke="#b0a090" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  )}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: 700, fontSize: 13 }}>
+                      {s.exercise}
+                      {s.up && <span style={{ fontWeight: 800, fontSize: 12, color: "#4a9a4a", marginLeft: 6 }}>{s.current}lb → {s.suggested}lb</span>}
+                    </div>
+                    <div style={{ fontSize: 11, color: "var(--muted)" }}>{s.reason}</div>
+                  </div>
+                </div>
+              ))}
+            </Card>
+          )}
+
+          {/* ─── NEW: Muscle Group Distribution Donut ─── */}
+          {totalGroupSets > 0 && (
+            <Card style={{ padding: 16, marginBottom: 14, animation: `fadeIn 0.2s ease-out 300ms both` }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: "var(--muted)", marginBottom: 12, textTransform: "uppercase", letterSpacing: 0.3 }}>Muscle Distribution</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 20, justifyContent: "center" }}>
+                <svg viewBox="0 0 100 100" width="120" height="120">
+                  {(() => {
+                    const r = 40;
+                    const circ = 2 * Math.PI * r;
+                    let offset = 0;
+                    return MUSCLE_GROUPS.filter(g => groupDistribution[g] > 0).map(g => {
+                      const pct = groupDistribution[g] / totalGroupSets;
+                      const dash = pct * circ;
+                      const el = (
+                        <circle
+                          key={g}
+                          cx="50" cy="50" r={r}
+                          fill="none"
+                          stroke={GROUP_COLORS[g]}
+                          strokeWidth="14"
+                          strokeDasharray={`${dash} ${circ - dash}`}
+                          strokeDashoffset={-offset}
+                          transform="rotate(-90 50 50)"
+                          style={{ transition: "stroke-dasharray 0.4s ease" }}
+                        />
+                      );
+                      offset += dash;
+                      return el;
+                    });
+                  })()}
+                  <text x="50" y="48" textAnchor="middle" fontSize="14" fontWeight="800" fill="var(--text)">{totalGroupSets}</text>
+                  <text x="50" y="60" textAnchor="middle" fontSize="7" fontWeight="700" fill="var(--muted)">sets</text>
+                </svg>
+                <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                  {MUSCLE_GROUPS.filter(g => groupDistribution[g] > 0).map(g => (
+                    <div key={g} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11 }}>
+                      <div style={{ width: 8, height: 8, borderRadius: "50%", background: GROUP_COLORS[g], flexShrink: 0 }} />
+                      <span style={{ fontWeight: 700 }}>{g}</span>
+                      <span style={{ color: "var(--muted)", fontWeight: 600 }}>{groupDistribution[g]}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* ─── NEW: Exercise Trend Chart ─── */}
+          {uniqueExercises.length > 0 && (
+            <Card style={{ padding: 16, marginBottom: 14, animation: `fadeIn 0.2s ease-out 360ms both` }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: "var(--muted)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.3 }}>Exercise Trend</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 12 }}>
+                {uniqueExercises.slice(0, 12).map(name => (
+                  <button key={name} className={`filter-chip ${activeTrend === name ? "active" : ""}`}
+                    onClick={() => setTrendExercise(name)}
+                    style={{ fontSize: 10, padding: "4px 10px" }}>
+                    {name}
+                  </button>
+                ))}
+              </div>
+              {trendData.length > 1 ? (() => {
+                const minW = Math.min(...trendData);
+                const maxW = Math.max(...trendData);
+                const range = maxW - minW || 1;
+                const padTop = 20;
+                const padBot = 20;
+                const chartH = 140 - padTop - padBot;
+                const stepX = 300 / Math.max(trendData.length - 1, 1);
+                const points = trendData.map((v, i) => `${i * stepX},${padTop + chartH - ((v - minW) / range) * chartH}`);
+                const reg = linearRegression(trendData);
+                const regY0 = reg ? padTop + chartH - ((reg.b - minW) / range) * chartH : 0;
+                const regY1 = reg ? padTop + chartH - ((reg.m * (trendData.length - 1) + reg.b - minW) / range) * chartH : 0;
+                return (
+                  <svg viewBox="0 0 300 140" width="100%" style={{ overflow: "visible" }}>
+                    {/* Grid lines */}
+                    {[0, 0.25, 0.5, 0.75, 1].map(pct => {
+                      const y = padTop + chartH - pct * chartH;
+                      return <line key={pct} x1="0" y1={y} x2="300" y2={y} stroke="#e8dcc8" strokeWidth="0.5" />;
+                    })}
+                    {/* Trend line */}
+                    {reg && (
+                      <line x1="0" y1={regY0} x2={(trendData.length - 1) * stepX} y2={regY1} stroke="var(--accent)" strokeWidth="1.5" strokeDasharray="6 4" opacity="0.5" />
+                    )}
+                    {/* Data line */}
+                    <polyline points={points.join(" ")} fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+                    {/* Data dots */}
+                    {trendData.map((v, i) => {
+                      const x = i * stepX;
+                      const y = padTop + chartH - ((v - minW) / range) * chartH;
+                      return (
+                        <g key={i}>
+                          <circle cx={x} cy={y} r="4" fill="var(--accent)" stroke="white" strokeWidth="1.5" />
+                          <text x={x} y={y - 8} textAnchor="middle" fontSize="8" fontWeight="700" fill="var(--muted)">{v}</text>
+                        </g>
+                      );
+                    })}
+                    {/* Axis labels */}
+                    <text x="0" y={padTop + chartH + 14} fontSize="7" fill="var(--muted)" fontWeight="600">Oldest</text>
+                    <text x="300" y={padTop + chartH + 14} fontSize="7" fill="var(--muted)" fontWeight="600" textAnchor="end">Latest</text>
+                  </svg>
+                );
+              })() : (
+                <div style={{ fontSize: 12, color: "var(--muted)", textAlign: "center", padding: 16 }}>
+                  {trendData.length === 1 ? "Need 2+ sessions to show trend" : "No data yet"}
+                </div>
+              )}
+            </Card>
+          )}
+        </div>
       )}
 
       {/* ─── EXERCISE PICKER ─── */}
-      <Modal open={picking} onClose={() => setPicking(false)} title="Pick Exercise">
+      <Modal open={picking} onClose={() => { setPicking(false); setExerciseSearch(""); }} title="Pick Exercise">
         <div>
-          {recentExercises.length > 0 && (
+          {/* Search input */}
+          <input
+            className="cozy-input"
+            placeholder="Search exercises..."
+            value={exerciseSearch}
+            onChange={e => setExerciseSearch(e.target.value)}
+            style={{ width: "100%", marginBottom: 12, boxSizing: "border-box" }}
+            autoFocus
+          />
+          {filteredRecent.length > 0 && (
             <div style={{ marginBottom: 14 }}>
               <div style={{ fontSize: 10, fontWeight: 800, color: "var(--muted)", textTransform: "uppercase", marginBottom: 6 }}>Recent</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {recentExercises.map(name => {
+                {filteredRecent.map(name => {
                   const group = (gymLog || []).find(e => e.name === name)?.group || "";
                   return <button key={name} className="quick-chip" onClick={() => pickExercise(name, group)} style={{ fontSize: 12, padding: "7px 12px" }}>{name}</button>;
                 })}
@@ -451,7 +681,7 @@ export default function GymTab({ gymLog, saveGymLog }) {
             </div>
           )}
           <div style={{ maxHeight: "40vh", overflowY: "auto" }}>
-            {sessionExercises.map(([group, exList]) => (
+            {filteredSessionExercises.map(([group, exList]) => (
               <div key={group} style={{ marginBottom: 14 }}>
                 <div style={{ fontSize: 10, fontWeight: 800, color: "var(--muted)", textTransform: "uppercase", marginBottom: 6 }}>{group}</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -459,6 +689,9 @@ export default function GymTab({ gymLog, saveGymLog }) {
                 </div>
               </div>
             ))}
+            {filteredSessionExercises.length === 0 && searchLower && (
+              <div style={{ fontSize: 12, color: "var(--muted)", textAlign: "center", padding: 16 }}>No exercises match "{exerciseSearch}"</div>
+            )}
           </div>
         </div>
       </Modal>

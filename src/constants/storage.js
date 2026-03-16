@@ -10,6 +10,7 @@ export const STORAGE_KEYS = {
   macroLog: "ff2-macrolog",
   macroGoals: "ff2-macrogoals",
   gymLog: "ff2-gymlog",
+  bodyWeight: "ff2-bodyweight",
 };
 
 export const DEFAULT_RECIPES = [

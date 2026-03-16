@@ -187,6 +187,19 @@ export const globalStyles = `
     0%, 100% { transform: translateY(-40px); opacity: 0.4; }
     50% { transform: translateY(40px); opacity: 1; }
   }
+  @keyframes bounceIn {
+    0% { opacity: 0; transform: scale(0.3); }
+    50% { opacity: 1; transform: scale(1.05); }
+    70% { transform: scale(0.95); }
+    100% { transform: scale(1); }
+  }
+  @keyframes lineReveal {
+    to { stroke-dashoffset: 0; }
+  }
+  @keyframes countUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 
   /* ─── Loading Dots ─── */
   .loading-dots {
