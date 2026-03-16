@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { TABS } from "./constants/categories";
-import { STORAGE_KEYS } from "./constants/storage";
+import { STORAGE_KEYS, DEFAULT_RECIPES } from "./constants/storage";
 import { daysUntil } from "./utils/dateHelpers";
 import { globalStyles } from "./styles/global";
 import FridgeTab from "./components/fridge/FridgeTab";
@@ -60,7 +60,12 @@ export default function FridgeFriend() {
         if (c?.value) setShopping(JSON.parse(c.value));
         if (d?.value) setLowStockItems(JSON.parse(d.value));
         if (e?.value) setStaples(JSON.parse(e.value));
-        if (f?.value) setRecipes(JSON.parse(f.value));
+        if (f?.value) {
+          setRecipes(JSON.parse(f.value));
+        } else {
+          setRecipes(DEFAULT_RECIPES);
+          window.storage.set(STORAGE_KEYS.recipes, JSON.stringify(DEFAULT_RECIPES)).catch(() => {});
+        }
         if (g?.value) setRecurring(JSON.parse(g.value));
       } catch (e) { console.error(e); }
       setLoaded(true);
