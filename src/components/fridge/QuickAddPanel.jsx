@@ -1,36 +1,46 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { CATEGORY_EMOJI } from "../../constants/categories";
+import { useState, useEffect, useRef } from "react";
+
+let _foodsCache = null;
+
+async function loadFoods() {
+  if (_foodsCache) return _foodsCache;
+  try {
+    const res = await fetch("/foods.json");
+    _foodsCache = await res.json();
+  } catch {
+    _foodsCache = [];
+  }
+  return _foodsCache;
+}
+
+function searchFoods(foods, term) {
+  if (!term.trim()) return foods.slice(0, 30);
+  const q = term.toLowerCase().trim();
+  // Prefix match first, then substring
+  const prefix = foods.filter(f => f.name.toLowerCase().startsWith(q));
+  const substring = foods.filter(f => !f.name.toLowerCase().startsWith(q) && f.name.toLowerCase().includes(q));
+  return [...prefix, ...substring].slice(0, 30);
+}
 
 export default function QuickAddPanel({ onAdd, onClose, existingItems }) {
   const [query, setQuery] = useState("");
+  const [foods, setFoods] = useState([]);
   const [results, setResults] = useState([]);
-  const [popular, setPopular] = useState([]);
   const [justAdded, setJustAdded] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const inputRef = useRef(null);
   const debounceRef = useRef(null);
 
-  // Load popular items on mount
   useEffect(() => {
-    fetch("/api/foods?q=")
-      .then(r => r.json())
-      .then(setPopular)
-      .catch(() => {});
-  }, []);
-
-  const search = useCallback((term) => {
-    if (!term.trim()) { setResults([]); return; }
-    setLoading(true);
-    fetch(`/api/foods?q=${encodeURIComponent(term)}`)
-      .then(r => r.json())
-      .then(data => { setResults(data); setLoading(false); })
-      .catch(() => setLoading(false));
+    loadFoods().then(data => { setFoods(data); setResults(data.slice(0, 30)); setLoading(false); });
   }, []);
 
   function handleInput(val) {
     setQuery(val);
     clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => search(val), 150);
+    debounceRef.current = setTimeout(() => {
+      setResults(searchFoods(foods, val));
+    }, 80);
   }
 
   function handleAdd(food) {
@@ -46,12 +56,11 @@ export default function QuickAddPanel({ onAdd, onClose, existingItems }) {
     setJustAdded(prev => [...prev, food.name]);
   }
 
-  const displayList = query.trim() ? results : popular;
   const recentNames = [...new Set(existingItems.map(i => i.name))].slice(0, 6);
 
   return (
     <div>
-      {/* Search — fixed top */}
+      {/* Search */}
       <div style={{ position: "relative", marginBottom: 10, flexShrink: 0 }}>
         <input
           ref={inputRef}
@@ -78,15 +87,11 @@ export default function QuickAddPanel({ onAdd, onClose, existingItems }) {
             <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
               {recentNames.map(name => {
                 const added = justAdded.includes(name);
+                const food = foods.find(f => f.name.toLowerCase() === name.toLowerCase());
                 return (
                   <button key={`r-${name}`} className={`quick-chip ${added ? "added" : ""}`}
                     disabled={added}
-                    onClick={() => {
-                      fetch(`/api/foods?q=${encodeURIComponent(name)}`)
-                        .then(r => r.json())
-                        .then(data => { if (data[0]) handleAdd(data[0]); })
-                        .catch(() => {});
-                    }}
+                    onClick={() => { if (food) handleAdd(food); }}
                   >
                     {added ? "✓ " : ""}{name}
                   </button>
@@ -102,17 +107,17 @@ export default function QuickAddPanel({ onAdd, onClose, existingItems }) {
         </div>
 
         {/* Results list */}
-        {displayList.length === 0 && query.trim() && !loading && (
+        {results.length === 0 && query.trim() && !loading && (
           <div style={{ textAlign: "center", padding: 24, color: "#b8a080" }}>
             <div style={{ fontSize: 13, fontWeight: 600 }}>No matches for "{query}"</div>
             <div style={{ fontSize: 11, marginTop: 4, color: "var(--muted)" }}>Try a different spelling or shorter term</div>
           </div>
         )}
-        {displayList.map(food => {
+        {results.map(food => {
           const added = justAdded.includes(food.name);
           return (
             <button
-              key={food.id}
+              key={food.name}
               disabled={added}
               onClick={() => handleAdd(food)}
               style={{
