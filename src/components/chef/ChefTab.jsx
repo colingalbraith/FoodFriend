@@ -5,7 +5,7 @@ import Card from "../ui/Card";
 import EmptyState from "../ui/EmptyState";
 import Modal from "../ui/Modal";
 
-export default function ChefTab({ items, saveMeals, meals, recipes, saveRecipes }) {
+export default function ChefTab({ items, saveMeals, meals, recipes, saveRecipes, shopping, saveShopping }) {
   const [addingRecipe, setAddingRecipe] = useState(false);
   const [editingRecipe, setEditingRecipe] = useState(null);
   const [recipeName, setRecipeName] = useState("");
@@ -128,8 +128,24 @@ export default function ChefTab({ items, saveMeals, meals, recipes, saveRecipes 
                   )}
 
                   {total > 0 && (
-                    <div style={{ fontSize: 11, fontWeight: 700, color: canMake ? "#4a7a4a" : "var(--muted)" }}>
-                      {canMake ? "Ready to cook — all ingredients in fridge" : `${haveCount}/${total} ingredients in fridge`}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: canMake ? "#4a7a4a" : "var(--muted)" }}>
+                        {canMake ? "Ready to cook — all ingredients in fridge" : `${haveCount}/${total} ingredients in fridge`}
+                      </div>
+                      {!canMake && total > 0 && (
+                        <button className="cozy-btn secondary" style={{ fontSize: 10, padding: "4px 10px", minHeight: 28, borderRadius: 8, flexShrink: 0 }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const missing = r.ingredients.filter(ing => !fridgeNames.has(ing.toLowerCase()));
+                            const existingNames = new Set((shopping || []).map(i => i.name.toLowerCase()));
+                            const toAdd = missing.filter(n => !existingNames.has(n.toLowerCase()));
+                            if (toAdd.length > 0) {
+                              saveShopping([...(shopping || []), ...toAdd.map(n => ({ id: makeId(), name: n, checked: false }))]);
+                            }
+                          }}>
+                          + Shop
+                        </button>
+                      )}
                     </div>
                   )}
 

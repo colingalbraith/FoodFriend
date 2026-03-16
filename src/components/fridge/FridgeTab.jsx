@@ -13,10 +13,15 @@ import BarcodeScanPanel from "./BarcodeScanPanel";
 import ReceiptScanPanel from "./ReceiptScanPanel";
 import FridgeView from "./FridgeView";
 
-export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStock, staples, saveStaples }) {
+export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStock, staples, saveStaples, shopping, saveShopping }) {
   const [addMode, setAddMode] = useState(null);
   const [filter, setFilter] = useState("All");
   const [swipedId, setSwipedId] = useState(null);
+  const [editingItem, setEditingItem] = useState(null);
+  const [editName, setEditName] = useState("");
+  const [editQty, setEditQty] = useState("");
+  const [editExpiry, setEditExpiry] = useState("");
+  const [editCategory, setEditCategory] = useState("");
 
   function addItemObj(obj) {
     const { expiry: autoExp, category: autoCat } = autoExpiry(obj.name);
@@ -27,6 +32,10 @@ export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStoc
       addedAt: new Date().toISOString(),
     };
     saveItems([...items, newItem]);
+    // Remove from low stock if re-added
+    if (lowStockItems.includes(obj.name)) {
+      saveLowStock(lowStockItems.filter(n => n !== obj.name));
+    }
   }
 
   function removeItem(id) { saveItems(items.filter(i => i.id !== id)); }
@@ -38,6 +47,23 @@ export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStoc
     removeItem(id);
   }
   function tossItem(id) { removeItem(id); }
+
+  function openEditItem(item) {
+    setEditingItem(item.id);
+    setEditName(item.name);
+    setEditQty(item.qty || "1");
+    setEditExpiry(item.expiry || "");
+    setEditCategory(item.category || "Other");
+    setSwipedId(null);
+  }
+
+  function saveEditItem() {
+    if (!editingItem || !editName.trim()) return;
+    saveItems(items.map(i => i.id === editingItem ? {
+      ...i, name: editName.trim(), qty: editQty, expiry: editExpiry || null, category: editCategory,
+    } : i));
+    setEditingItem(null);
+  }
 
   const filtered = filter === "All" ? items :
     filter === "Expiring" ? items.filter(i => { const d = daysUntil(i.expiry); return d >= 0 && d <= 3; }) :
@@ -108,6 +134,9 @@ export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStoc
                   position: "absolute", right: 0, top: 0, bottom: 0,
                   display: "flex", gap: 0, animation: "fadeIn 0.2s ease-out",
                 }}>
+                  <button className="swipe-action" style={{ background: "var(--accent)", color: "white" }} onClick={() => openEditItem(item)}>
+                    Edit
+                  </button>
                   <button className="swipe-action use" onClick={() => { useUpItem(item.id); setSwipedId(null); }}>
                     Used
                   </button>
@@ -125,6 +154,7 @@ export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStoc
                   <div style={{ fontSize: 11, color: "var(--muted)", display: "flex", gap: 6, marginTop: 2 }}>
                     <span>{item.category}</span>
                     {item.qty && item.qty !== "1" && <span>x{item.qty}</span>}
+                    {item.addedAt && <span>· Added {new Date(item.addedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>}
                   </div>
                 </div>
                 <Badge label={label} />
@@ -140,13 +170,34 @@ export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStoc
         </div>
       )}
 
+      {/* Edit item modal */}
+      <Modal open={!!editingItem} onClose={() => setEditingItem(null)} title="Edit Item">
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <input className="cozy-input" placeholder="Name" value={editName} onChange={e => setEditName(e.target.value)} />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <select className="cozy-input" value={editCategory} onChange={e => setEditCategory(e.target.value)}>
+              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <input className="cozy-input" placeholder="Qty" value={editQty} onChange={e => setEditQty(e.target.value)} />
+          </div>
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: 4 }}>Expires</label>
+            <input className="cozy-input" type="date" value={editExpiry} onChange={e => setEditExpiry(e.target.value)} />
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="cozy-btn primary" style={{ flex: 1 }} onClick={saveEditItem}>Save</button>
+            <button className="cozy-btn danger" onClick={() => { removeItem(editingItem); setEditingItem(null); }}>Delete</button>
+          </div>
+        </div>
+      </Modal>
+
       {/* Staples section */}
-      <StaplesSection staples={staples} saveStaples={saveStaples} />
+      <StaplesSection staples={staples} saveStaples={saveStaples} shopping={shopping} saveShopping={saveShopping} />
     </div>
   );
 }
 
-function StaplesSection({ staples, saveStaples }) {
+function StaplesSection({ staples, saveStaples, shopping, saveShopping }) {
   const [collapsed, setCollapsed] = useState(true);
   const [filter, setFilter] = useState("all");
   const [editing, setEditing] = useState(false);
@@ -318,6 +369,20 @@ function StaplesSection({ staples, saveStaples }) {
               </div>
             )}
           </div>
+
+          {/* Add needed staples to shopping list */}
+          {outCount > 0 && saveShopping && (
+            <button className="cozy-btn secondary full" style={{ marginTop: 12 }} onClick={() => {
+              const needed = allItems.filter(s => !s.inStock).map(s => s.name);
+              const existingNames = new Set((shopping || []).map(i => i.name.toLowerCase()));
+              const toAdd = needed.filter(n => !existingNames.has(n.toLowerCase()));
+              if (toAdd.length > 0) {
+                saveShopping([...(shopping || []), ...toAdd.map(n => ({ id: makeId(), name: n, checked: false }))]);
+              }
+            }}>
+              Add {outCount} needed to shopping list
+            </button>
+          )}
         </div>
       )}
     </div>
