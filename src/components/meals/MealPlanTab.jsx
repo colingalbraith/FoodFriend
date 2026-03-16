@@ -16,7 +16,7 @@ const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 const WEEKEND = ["Sat", "Sun"];
 const EVERYDAY = [...DAYS_OF_WEEK];
 
-export default function MealPlanTab({ meals, saveMeals, items, recurring, saveRecurring }) {
+export default function MealPlanTab({ meals, saveMeals, items, recurring, saveRecurring, recipes, macroLog, saveMacroLog }) {
   const weekDates = getWeekDates();
   const today = weekDates[0];
   const [editing, setEditing] = useState(null);
@@ -31,6 +31,53 @@ export default function MealPlanTab({ meals, saveMeals, items, recurring, saveRe
   const inputRef = useRef(null);
 
   const recurringList = recurring?.list || [];
+  const recipeMap = {};
+  (recipes || []).forEach(r => { recipeMap[r.name.toLowerCase()] = r; });
+
+  // Find recipe match for a meal name
+  function findRecipe(name) {
+    if (!name) return null;
+    const key = name.toLowerCase().trim();
+    if (recipeMap[key]) return recipeMap[key];
+    for (const r of (recipes || [])) {
+      if (key.includes(r.name.toLowerCase()) || r.name.toLowerCase().includes(key)) return r;
+    }
+    return null;
+  }
+
+  // Check if a meal is already logged in macros for a given date
+  function isLogged(date, mealName) {
+    if (!macroLog || !mealName) return false;
+    return macroLog.some(e => e.date === date && e.name.toLowerCase() === mealName.toLowerCase());
+  }
+
+  // Log a meal to macros
+  function logMealToMacros(date, mealName) {
+    const recipe = findRecipe(mealName);
+    const entry = {
+      id: makeId(),
+      date: date,
+      name: mealName,
+      calories: recipe?.calories || "0",
+      protein: recipe?.protein || "0",
+      carbs: "0",
+      fat: "0",
+      time: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
+    };
+    saveMacroLog([entry, ...(macroLog || [])]);
+  }
+
+  // Get day's macro totals from logged entries
+  function getDayMacros(date) {
+    if (!macroLog) return null;
+    const entries = macroLog.filter(e => e.date === date);
+    if (entries.length === 0) return null;
+    return {
+      calories: entries.reduce((s, e) => s + (Number(e.calories) || 0), 0),
+      protein: entries.reduce((s, e) => s + (Number(e.protein) || 0), 0),
+      count: entries.length,
+    };
+  }
 
   // Get the day name for a date
   function getDayName(dateStr) {
@@ -140,6 +187,7 @@ export default function MealPlanTab({ meals, saveMeals, items, recurring, saveRe
             return { ...mt, key, value: explicit || null, recurring: rec };
           });
           const filledCount = dayMeals.filter(m => m.value || m.recurring).length;
+          const dayMacros = getDayMacros(date);
 
           return (
             <Card key={date} style={{
@@ -160,33 +208,72 @@ export default function MealPlanTab({ meals, saveMeals, items, recurring, saveRe
                     {d.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
                   </span>
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 700, color: filledCount === 3 ? "#6b8e6b" : "var(--muted)" }}>
-                  {filledCount}/3
-                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  {dayMacros && (
+                    <span style={{ fontSize: 10, fontWeight: 700, color: "var(--muted)" }}>
+                      {dayMacros.calories} cal · {dayMacros.protein}g P
+                    </span>
+                  )}
+                  <span style={{ fontSize: 11, fontWeight: 700, color: filledCount === 3 ? "#6b8e6b" : "var(--muted)" }}>
+                    {filledCount}/3
+                  </span>
+                </div>
               </div>
 
-              {dayMeals.map(meal => (
-                <div key={meal.key} onClick={() => openEdit(date, meal.id)} style={{
-                  padding: "14px 16px", borderTop: "1px solid #f0e6d6", cursor: "pointer",
-                  minHeight: 56, WebkitTapHighlightColor: "transparent",
-                }}>
-                  <div style={{
-                    fontSize: 10, fontWeight: 800, color: "var(--muted)",
-                    textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4,
+              {dayMeals.map(meal => {
+                const mealName = meal.value || meal.recurring;
+                const recipe = findRecipe(mealName);
+                const logged = isLogged(date, mealName);
+                return (
+                  <div key={meal.key} style={{
+                    padding: "14px 16px", borderTop: "1px solid #f0e6d6",
+                    minHeight: 56, WebkitTapHighlightColor: "transparent",
                   }}>
-                    {meal.label}
-                  </div>
-                  {meal.value ? (
-                    <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text)" }}>{meal.value}</div>
-                  ) : meal.recurring ? (
-                    <div style={{ fontSize: 14, fontWeight: 600, color: "var(--muted)", fontStyle: "italic" }}>
-                      {meal.recurring} <span style={{ fontSize: 10, fontWeight: 700, color: "var(--accent)" }}>recurring</span>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                      <div style={{ flex: 1, cursor: "pointer" }} onClick={() => openEdit(date, meal.id)}>
+                        <div style={{
+                          fontSize: 10, fontWeight: 800, color: "var(--muted)",
+                          textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4,
+                        }}>
+                          {meal.label}
+                        </div>
+                        {meal.value ? (
+                          <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text)" }}>{meal.value}</div>
+                        ) : meal.recurring ? (
+                          <div style={{ fontSize: 14, fontWeight: 600, color: "var(--muted)", fontStyle: "italic" }}>
+                            {meal.recurring} <span style={{ fontSize: 10, fontWeight: 700, color: "var(--accent)" }}>recurring</span>
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: 14, color: "#ccc", fontWeight: 600 }}>Tap to plan...</div>
+                        )}
+                        {recipe && (recipe.calories || recipe.protein) && (
+                          <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 3, display: "flex", gap: 6 }}>
+                            {recipe.calories && <span>{recipe.calories} cal</span>}
+                            {recipe.protein && <span>{recipe.protein}g protein</span>}
+                            {recipe.time && <span>{recipe.time}</span>}
+                          </div>
+                        )}
+                      </div>
+                      {mealName && saveMacroLog && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); if (!logged) logMealToMacros(date, mealName); }}
+                          disabled={logged}
+                          style={{
+                            background: logged ? "#edf5ed" : "var(--card)",
+                            border: `1.5px solid ${logged ? "#b8d4b8" : "#e0cdb5"}`,
+                            borderRadius: 8, padding: "4px 10px", cursor: logged ? "default" : "pointer",
+                            fontSize: 10, fontWeight: 700, flexShrink: 0, marginTop: 14,
+                            color: logged ? "#4a7a4a" : "var(--muted)",
+                            fontFamily: "var(--body)", WebkitTapHighlightColor: "transparent",
+                          }}
+                        >
+                          {logged ? "Logged" : "Log"}
+                        </button>
+                      )}
                     </div>
-                  ) : (
-                    <div style={{ fontSize: 14, color: "#ccc", fontWeight: 600 }}>Tap to plan...</div>
-                  )}
-                </div>
-              ))}
+                  </div>
+                );
+              })}
             </Card>
           );
         })}
@@ -253,14 +340,42 @@ export default function MealPlanTab({ meals, saveMeals, items, recurring, saveRe
           <div>
             {!meals[`${editing.date}-${editing.type}`] && getRecurringMeal(editing.date, editing.type) && (
               <div style={{ fontSize: 12, color: "var(--accent)", fontWeight: 600, marginBottom: 10 }}>
-                Recurring: {getRecurringMeal(editing.date, editing.type)} — type below to override for this day
+                Recurring: {getRecurringMeal(editing.date, editing.type)} — type below to override
               </div>
             )}
             <input ref={inputRef} className="cozy-input" placeholder="What's cooking?"
               value={mealInput} onChange={e => setMealInput(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter") saveMeal(); }}
-              style={{ marginBottom: 14 }}
+              style={{ marginBottom: 10 }}
             />
+
+            {/* Quick pick from recipes */}
+            {recipes && recipes.length > 0 && !mealInput && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.3, marginBottom: 6 }}>
+                  Quick pick from recipes
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 5, maxHeight: 120, overflowY: "auto" }}>
+                  {recipes.map(r => (
+                    <button key={r.id} className="quick-chip" onClick={() => setMealInput(r.name)}
+                      style={{ fontSize: 12, padding: "5px 10px" }}>
+                      {r.name}
+                      {r.calories && <span style={{ fontSize: 9, color: "var(--muted)", marginLeft: 4 }}>{r.calories}cal</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Show matched recipe macros */}
+            {mealInput && findRecipe(mealInput) && (
+              <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 10, padding: "6px 10px", background: "#f5f0e8", borderRadius: 8 }}>
+                {findRecipe(mealInput).calories && <span>{findRecipe(mealInput).calories} cal</span>}
+                {findRecipe(mealInput).protein && <span> · {findRecipe(mealInput).protein}g protein</span>}
+                {findRecipe(mealInput).time && <span> · {findRecipe(mealInput).time}</span>}
+              </div>
+            )}
+
             <div style={{ display: "flex", gap: 8 }}>
               <button className="cozy-btn primary" style={{ flex: 1 }} onClick={saveMeal}>
                 {meals[`${editing.date}-${editing.type}`] ? "Update" : "Save"}

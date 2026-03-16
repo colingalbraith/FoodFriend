@@ -168,7 +168,7 @@ export default function FridgeFriend() {
         {/* Tab content */}
         <main className="app-main">
           {tab === "fridge" && <FridgeTab items={items} saveItems={saveItems} lowStockItems={lowStockItems} saveLowStock={saveLowStock} staples={staples} saveStaples={saveStaples} shopping={shopping} saveShopping={saveShopping} />}
-          {tab === "meals" && <MealPlanTab meals={meals} saveMeals={saveMeals} items={items} recurring={recurring} saveRecurring={saveRecurring} />}
+          {tab === "meals" && <MealPlanTab meals={meals} saveMeals={saveMeals} items={items} recurring={recurring} saveRecurring={saveRecurring} recipes={recipes} macroLog={macroLog} saveMacroLog={saveMacroLog} />}
           {tab === "shopping" && <ShoppingTab list={shopping} saveList={saveShopping} items={items} />}
           {tab === "chef" && <ChefTab items={items} saveMeals={saveMeals} meals={meals} recipes={recipes} saveRecipes={saveRecipes} shopping={shopping} saveShopping={saveShopping} />}
           {tab === "macros" && <MacrosTab macroLog={macroLog} saveMacroLog={saveMacroLog} macroGoals={macroGoals} saveMacroGoals={saveMacroGoals} recipes={recipes} />}
