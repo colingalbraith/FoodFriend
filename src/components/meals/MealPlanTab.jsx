@@ -28,6 +28,7 @@ export default function MealPlanTab({ meals, saveMeals, items, recurring, saveRe
   const [section, setSection] = useState("plan"); // "plan" | "track" | "weight" | "recipes" | "stats"
   const [weightInput, setWeightInput] = useState("");
   const [recipeSearch, setRecipeSearch] = useState("");
+  const [recipeLimit, setRecipeLimit] = useState(20);
   const [addingRecipe, setAddingRecipe] = useState(false);
   const [editingRecipe, setEditingRecipe] = useState(null);
   const [recipeName, setRecipeName] = useState("");
@@ -494,11 +495,24 @@ export default function MealPlanTab({ meals, saveMeals, items, recurring, saveRe
             protein: recipeProtein.trim(), time: recipeTime.trim(),
             createdAt: editingRecipe ? (recipes || []).find(r => r.id === editingRecipe)?.createdAt : new Date().toISOString(),
           };
-          if (editingRecipe) saveRecipes((recipes || []).map(r => r.id === editingRecipe ? recipe : r));
-          else saveRecipes([recipe, ...(recipes || [])]);
+          // saveRecipes only persists user-created recipes, not defaults
+          const isDefault = editingRecipe && editingRecipe.startsWith("dr-") || editingRecipe?.startsWith("r1-") || editingRecipe?.startsWith("r2-") || editingRecipe?.startsWith("r3-");
+          if (editingRecipe && !isDefault) {
+            // Editing a user recipe — update it
+            const current = JSON.parse(localStorage.getItem("ff2-recipes") || "[]");
+            saveRecipes(current.map(r => r.id === editingRecipe ? recipe : r));
+          } else {
+            // Adding new or overriding a default — add as user recipe with new id
+            recipe.id = makeId();
+            const current = JSON.parse(localStorage.getItem("ff2-recipes") || "[]");
+            saveRecipes([recipe, ...current]);
+          }
           setAddingRecipe(false);
         }
-        function deleteRecipe(id) { saveRecipes((recipes || []).filter(r => r.id !== id)); }
+        function deleteRecipe(id) {
+          const current = JSON.parse(localStorage.getItem("ff2-recipes") || "[]");
+          saveRecipes(current.filter(r => r.id !== id));
+        }
 
         return (
           <>
@@ -508,7 +522,7 @@ export default function MealPlanTab({ meals, saveMeals, items, recurring, saveRe
             </div>
 
             <input className="cozy-input" placeholder="Search recipes..." value={recipeSearch}
-              onChange={e => setRecipeSearch(e.target.value)} style={{ marginBottom: 10 }} />
+              onChange={e => { setRecipeSearch(e.target.value); setRecipeLimit(20); }} style={{ marginBottom: 10 }} />
 
             <button className="cozy-btn primary full" onClick={openAddRecipe} style={{ marginBottom: 14 }}>Add Recipe</button>
 
@@ -518,7 +532,7 @@ export default function MealPlanTab({ meals, saveMeals, items, recurring, saveRe
               </Card>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {filtered.map((r, i) => {
+                {filtered.slice(0, recipeLimit).map((r, i) => {
                   const haveCount = r.ingredients.filter(ing => fridgeNames.has(ing.toLowerCase())).length;
                   const total = r.ingredients.length;
                   const canMake = total > 0 && haveCount === total;
@@ -565,6 +579,11 @@ export default function MealPlanTab({ meals, saveMeals, items, recurring, saveRe
                     </Card>
                   );
                 })}
+                {filtered.length > recipeLimit && (
+                  <button className="cozy-btn secondary full" onClick={() => setRecipeLimit(l => l + 20)} style={{ marginTop: 4 }}>
+                    Show More ({filtered.length - recipeLimit} remaining)
+                  </button>
+                )}
               </div>
             )}
 

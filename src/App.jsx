@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { TABS } from "./constants/categories";
 import { STORAGE_KEYS, DEFAULT_RECIPES } from "./constants/storage";
 import { daysUntil } from "./utils/dateHelpers";
@@ -48,7 +48,7 @@ export default function FridgeFriend() {
   const [shopping, setShopping] = useState([]);
   const [lowStockItems, setLowStockItems] = useState([]);
   const [staples, setStaples] = useState(null);
-  const [recipes, setRecipes] = useState([]);
+  const [userRecipes, setUserRecipes] = useState([]);
   const [recurring, setRecurring] = useState({});
   const [macroLog, setMacroLog] = useState([]);
   const [macroGoals, setMacroGoals] = useState(null);
@@ -78,10 +78,11 @@ export default function FridgeFriend() {
         if (d?.value) setLowStockItems(JSON.parse(d.value));
         if (e?.value) setStaples(JSON.parse(e.value));
         if (f?.value) {
-          setRecipes(JSON.parse(f.value));
-        } else {
-          setRecipes(DEFAULT_RECIPES);
-          window.storage.set(STORAGE_KEYS.recipes, JSON.stringify(DEFAULT_RECIPES)).catch(() => {});
+          const parsed = JSON.parse(f.value);
+          // Migrate: if stored recipes are just defaults, clear them to save space
+          const isOldFormat = parsed.length > 100 && parsed[0]?.id?.startsWith("dr-");
+          setUserRecipes(isOldFormat ? [] : parsed);
+          if (isOldFormat) window.storage.set(STORAGE_KEYS.recipes, "[]").catch(() => {});
         }
         if (g?.value) setRecurring(JSON.parse(g.value));
         if (h?.value) setMacroLog(JSON.parse(h.value));
@@ -107,7 +108,14 @@ export default function FridgeFriend() {
   const saveShopping = save(STORAGE_KEYS.shopping, setShopping);
   const saveLowStock = save(STORAGE_KEYS.lowStock, setLowStockItems);
   const saveStaples = save(STORAGE_KEYS.staples, setStaples);
-  const saveRecipes = save(STORAGE_KEYS.recipes, setRecipes);
+  const saveUserRecipes = save(STORAGE_KEYS.recipes, setUserRecipes);
+
+  // Merge: user recipes first, then defaults (user can override by same name)
+  const allRecipes = useMemo(() => {
+    const userNames = new Set(userRecipes.map(r => r.name.toLowerCase()));
+    const defaults = DEFAULT_RECIPES.filter(r => !userNames.has(r.name.toLowerCase()));
+    return [...userRecipes, ...defaults];
+  }, [userRecipes]);
   const saveRecurring = save(STORAGE_KEYS.recurring, setRecurring);
   const saveMacroLog = save(STORAGE_KEYS.macroLog, setMacroLog);
   const saveMacroGoals = save(STORAGE_KEYS.macroGoals, setMacroGoals);
@@ -183,7 +191,7 @@ export default function FridgeFriend() {
         {/* Tab content */}
         <main className="app-main">
           {tab === "fridge" && <FridgeTab items={items} saveItems={saveItems} lowStockItems={lowStockItems} saveLowStock={saveLowStock} staples={staples} saveStaples={saveStaples} shopping={shopping} saveShopping={saveShopping} />}
-          {tab === "meals" && <MealPlanTab meals={meals} saveMeals={saveMeals} items={items} recurring={recurring} saveRecurring={saveRecurring} recipes={recipes} saveRecipes={saveRecipes} macroLog={macroLog} saveMacroLog={saveMacroLog} macroGoals={macroGoals} saveMacroGoals={saveMacroGoals} bodyWeight={bodyWeight} saveBodyWeight={saveBodyWeight} userProfile={userProfile} shopping={shopping} saveShopping={saveShopping} />}
+          {tab === "meals" && <MealPlanTab meals={meals} saveMeals={saveMeals} items={items} recurring={recurring} saveRecurring={saveRecurring} recipes={allRecipes} saveRecipes={saveUserRecipes} macroLog={macroLog} saveMacroLog={saveMacroLog} macroGoals={macroGoals} saveMacroGoals={saveMacroGoals} bodyWeight={bodyWeight} saveBodyWeight={saveBodyWeight} userProfile={userProfile} shopping={shopping} saveShopping={saveShopping} />}
           {tab === "shopping" && <ShoppingTab list={shopping} saveList={saveShopping} items={items} />}
           {tab === "gym" && <GymTab gymLog={gymLog} saveGymLog={saveGymLog} />}
           {tab === "settings" && <SettingsTab userProfile={userProfile} saveUserProfile={saveUserProfile} macroGoals={macroGoals} saveMacroGoals={saveMacroGoals} />}
