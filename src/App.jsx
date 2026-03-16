@@ -7,7 +7,7 @@ import FridgeTab from "./components/fridge/FridgeTab";
 import MealPlanTab from "./components/meals/MealPlanTab";
 import ShoppingTab from "./components/shopping/ShoppingTab";
 import ChefTab from "./components/chef/ChefTab";
-import MacrosTab from "./components/macros/MacrosTab";
+import GymTab from "./components/gym/GymTab";
 
 const TAB_ICONS = {
   fridge: (active) => (
@@ -31,9 +31,12 @@ const TAB_ICONS = {
       <line x1="8" y1="20" x2="16" y2="20" />
     </svg>
   ),
-  macros: (active) => (
+  gym: (active) => (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? "var(--text)" : "var(--muted)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 20V10M12 20V4M6 20v-6" />
+      <path d="M6.5 6.5a2 2 0 0 1 3 0V17.5a2 2 0 0 1-3 0zM14.5 6.5a2 2 0 0 1 3 0V17.5a2 2 0 0 1-3 0z" />
+      <line x1="9.5" y1="12" x2="14.5" y2="12" />
+      <line x1="2" y1="10" x2="6.5" y2="10" /><line x1="2" y1="14" x2="6.5" y2="14" />
+      <line x1="17.5" y1="10" x2="22" y2="10" /><line x1="17.5" y1="14" x2="22" y2="14" />
     </svg>
   ),
 };
@@ -49,6 +52,7 @@ export default function FridgeFriend() {
   const [recurring, setRecurring] = useState({});
   const [macroLog, setMacroLog] = useState([]);
   const [macroGoals, setMacroGoals] = useState(null);
+  const [gymLog, setGymLog] = useState([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -80,6 +84,8 @@ export default function FridgeFriend() {
         if (g?.value) setRecurring(JSON.parse(g.value));
         if (h?.value) setMacroLog(JSON.parse(h.value));
         if (i?.value) setMacroGoals(JSON.parse(i.value));
+        const j = await window.storage.get(STORAGE_KEYS.gymLog).catch(() => null);
+        if (j?.value) setGymLog(JSON.parse(j.value));
       } catch (e) { console.error(e); }
       setLoaded(true);
     })();
@@ -99,6 +105,7 @@ export default function FridgeFriend() {
   const saveRecurring = save(STORAGE_KEYS.recurring, setRecurring);
   const saveMacroLog = save(STORAGE_KEYS.macroLog, setMacroLog);
   const saveMacroGoals = save(STORAGE_KEYS.macroGoals, setMacroGoals);
+  const saveGymLog = save(STORAGE_KEYS.gymLog, setGymLog);
 
   const expiringSoon = items.filter(i => { const d = daysUntil(i.expiry); return d >= 0 && d <= 3; }).length;
   const expired = items.filter(i => daysUntil(i.expiry) < 0).length;
@@ -168,10 +175,10 @@ export default function FridgeFriend() {
         {/* Tab content */}
         <main className="app-main">
           {tab === "fridge" && <FridgeTab items={items} saveItems={saveItems} lowStockItems={lowStockItems} saveLowStock={saveLowStock} staples={staples} saveStaples={saveStaples} shopping={shopping} saveShopping={saveShopping} />}
-          {tab === "meals" && <MealPlanTab meals={meals} saveMeals={saveMeals} items={items} recurring={recurring} saveRecurring={saveRecurring} recipes={recipes} macroLog={macroLog} saveMacroLog={saveMacroLog} />}
+          {tab === "meals" && <MealPlanTab meals={meals} saveMeals={saveMeals} items={items} recurring={recurring} saveRecurring={saveRecurring} recipes={recipes} macroLog={macroLog} saveMacroLog={saveMacroLog} macroGoals={macroGoals} saveMacroGoals={saveMacroGoals} />}
           {tab === "shopping" && <ShoppingTab list={shopping} saveList={saveShopping} items={items} />}
           {tab === "chef" && <ChefTab items={items} saveMeals={saveMeals} meals={meals} recipes={recipes} saveRecipes={saveRecipes} shopping={shopping} saveShopping={saveShopping} />}
-          {tab === "macros" && <MacrosTab macroLog={macroLog} saveMacroLog={saveMacroLog} macroGoals={macroGoals} saveMacroGoals={saveMacroGoals} recipes={recipes} />}
+          {tab === "gym" && <GymTab gymLog={gymLog} saveGymLog={saveGymLog} />}
         </main>
       </div>
 

@@ -15,26 +15,45 @@ const DAYS_OF_WEEK = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 const WEEKEND = ["Sat", "Sun"];
 const EVERYDAY = [...DAYS_OF_WEEK];
+const DEFAULT_GOALS = { calories: 2000, protein: 150, carbs: 250, fat: 65 };
 
-export default function MealPlanTab({ meals, saveMeals, items, recurring, saveRecurring, recipes, macroLog, saveMacroLog }) {
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+export default function MealPlanTab({ meals, saveMeals, items, recurring, saveRecurring, recipes, macroLog, saveMacroLog, macroGoals, saveMacroGoals }) {
   const weekDates = getWeekDates();
   const today = weekDates[0];
+  const [section, setSection] = useState("plan"); // "plan" | "track" | "stats"
   const [editing, setEditing] = useState(null);
   const [mealInput, setMealInput] = useState("");
   const [showRecurring, setShowRecurring] = useState(false);
   const [addingRecurring, setAddingRecurring] = useState(false);
   const [recName, setRecName] = useState("");
   const [recType, setRecType] = useState("breakfast");
-  const [recDays, setRecDays] = useState("weekdays"); // "weekdays" | "weekend" | "everyday" | "custom"
+  const [recDays, setRecDays] = useState("weekdays");
   const [recCustomDays, setRecCustomDays] = useState([]);
   const [editingRecId, setEditingRecId] = useState(null);
+  const [adding, setAdding] = useState(false);
+  const [logName, setLogName] = useState("");
+  const [logCal, setLogCal] = useState("");
+  const [logPro, setLogPro] = useState("");
+  const [logCarb, setLogCarb] = useState("");
+  const [logFat, setLogFat] = useState("");
+  const [editingGoals, setEditingGoals] = useState(false);
   const inputRef = useRef(null);
+
+  const goals = macroGoals || DEFAULT_GOALS;
+  const [goalCal, setGoalCal] = useState(String(goals.calories));
+  const [goalPro, setGoalPro] = useState(String(goals.protein));
+  const [goalCarb, setGoalCarb] = useState(String(goals.carbs));
+  const [goalFat, setGoalFat] = useState(String(goals.fat));
 
   const recurringList = recurring?.list || [];
   const recipeMap = {};
   (recipes || []).forEach(r => { recipeMap[r.name.toLowerCase()] = r; });
 
-  // Find recipe match for a meal name
   function findRecipe(name) {
     if (!name) return null;
     const key = name.toLowerCase().trim();
@@ -45,29 +64,29 @@ export default function MealPlanTab({ meals, saveMeals, items, recurring, saveRe
     return null;
   }
 
-  // Check if a meal is already logged in macros for a given date
+  function getDayName(dateStr) { return DAYS_OF_WEEK[new Date(dateStr + "T12:00:00").getDay()]; }
+
+  function getRecurringMeal(dateStr, mealType) {
+    const dayName = getDayName(dateStr);
+    const matches = recurringList.filter(r => r.type === mealType && r.days.includes(dayName));
+    return matches.length > 0 ? matches[0].name : null;
+  }
+
   function isLogged(date, mealName) {
     if (!macroLog || !mealName) return false;
     return macroLog.some(e => e.date === date && e.name.toLowerCase() === mealName.toLowerCase());
   }
 
-  // Log a meal to macros
   function logMealToMacros(date, mealName) {
     const recipe = findRecipe(mealName);
-    const entry = {
-      id: makeId(),
-      date: date,
-      name: mealName,
-      calories: recipe?.calories || "0",
-      protein: recipe?.protein || "0",
-      carbs: "0",
-      fat: "0",
+    saveMacroLog([{
+      id: makeId(), date, name: mealName,
+      calories: recipe?.calories || "0", protein: recipe?.protein || "0",
+      carbs: "0", fat: "0",
       time: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
-    };
-    saveMacroLog([entry, ...(macroLog || [])]);
+    }, ...(macroLog || [])]);
   }
 
-  // Get day's macro totals from logged entries
   function getDayMacros(date) {
     if (!macroLog) return null;
     const entries = macroLog.filter(e => e.date === date);
@@ -75,21 +94,26 @@ export default function MealPlanTab({ meals, saveMeals, items, recurring, saveRe
     return {
       calories: entries.reduce((s, e) => s + (Number(e.calories) || 0), 0),
       protein: entries.reduce((s, e) => s + (Number(e.protein) || 0), 0),
-      count: entries.length,
     };
   }
 
-  // Get the day name for a date
-  function getDayName(dateStr) {
-    return DAYS_OF_WEEK[new Date(dateStr).getDay()];
-  }
+  // 7 day macro history for chart
+  const last7 = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(); d.setDate(d.getDate() - (6 - i));
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  });
 
-  // Get recurring meal for a date + meal type
-  function getRecurringMeal(dateStr, mealType) {
-    const dayName = getDayName(dateStr);
-    const matches = recurringList.filter(r => r.type === mealType && r.days.includes(dayName));
-    return matches.length > 0 ? matches[0].name : null;
-  }
+  const weekData = last7.map(date => {
+    const entries = (macroLog || []).filter(e => e.date === date);
+    return {
+      date,
+      label: date === today ? "Today" : DAYS_OF_WEEK[new Date(date + "T12:00:00").getDay()],
+      calories: entries.reduce((s, e) => s + (Number(e.calories) || 0), 0),
+      protein: entries.reduce((s, e) => s + (Number(e.protein) || 0), 0),
+      entries: entries.length,
+    };
+  });
+  const maxCal = Math.max(goals.calories, ...weekData.map(d => d.calories));
 
   const planned = weekDates.flatMap(d => MEAL_TYPES.map(mt => {
     const key = `${d}-${mt.id}`;
@@ -97,8 +121,7 @@ export default function MealPlanTab({ meals, saveMeals, items, recurring, saveRe
   })).filter(Boolean).length;
 
   function openEdit(date, type) {
-    const key = `${date}-${type}`;
-    setMealInput(meals[key] || "");
+    setMealInput(meals[`${date}-${type}`] || "");
     setEditing({ date, type });
   }
 
@@ -108,28 +131,20 @@ export default function MealPlanTab({ meals, saveMeals, items, recurring, saveRe
     const n = { ...meals };
     if (mealInput.trim()) n[key] = mealInput.trim(); else delete n[key];
     saveMeals(n);
-    setEditing(null);
-    setMealInput("");
+    setEditing(null); setMealInput("");
   }
 
   function clearMeal() {
     if (!editing) return;
-    const key = `${editing.date}-${editing.type}`;
-    const n = { ...meals };
-    delete n[key];
-    saveMeals(n);
-    setEditing(null);
-    setMealInput("");
+    const n = { ...meals }; delete n[`${editing.date}-${editing.type}`];
+    saveMeals(n); setEditing(null); setMealInput("");
   }
 
-  useEffect(() => {
-    if (editing) setTimeout(() => inputRef.current?.focus(), 100);
-  }, [editing]);
+  useEffect(() => { if (editing) setTimeout(() => inputRef.current?.focus(), 100); }, [editing]);
 
   function openAddRecurring() {
     setRecName(""); setRecType("breakfast"); setRecDays("weekdays"); setRecCustomDays([]);
-    setEditingRecId(null);
-    setAddingRecurring(true);
+    setEditingRecId(null); setAddingRecurring(true);
   }
 
   function openEditRecurring(r) {
@@ -139,305 +154,375 @@ export default function MealPlanTab({ meals, saveMeals, items, recurring, saveRe
     else if (dStr === WEEKEND.join(",")) setRecDays("weekend");
     else if (dStr === EVERYDAY.join(",")) setRecDays("everyday");
     else { setRecDays("custom"); setRecCustomDays(r.days); }
-    setEditingRecId(r.id);
-    setAddingRecurring(true);
+    setEditingRecId(r.id); setAddingRecurring(true);
   }
 
   function saveRecurringMeal() {
     if (!recName.trim()) return;
-    const days = recDays === "weekdays" ? WEEKDAYS
-      : recDays === "weekend" ? WEEKEND
-      : recDays === "everyday" ? EVERYDAY
-      : recCustomDays;
+    const days = recDays === "weekdays" ? WEEKDAYS : recDays === "weekend" ? WEEKEND : recDays === "everyday" ? EVERYDAY : recCustomDays;
     if (days.length === 0) return;
-
     const entry = { id: editingRecId || makeId(), name: recName.trim(), type: recType, days };
-    const list = editingRecId
-      ? recurringList.map(r => r.id === editingRecId ? entry : r)
-      : [...recurringList, entry];
-    saveRecurring({ list });
-    setAddingRecurring(false);
+    const list = editingRecId ? recurringList.map(r => r.id === editingRecId ? entry : r) : [...recurringList, entry];
+    saveRecurring({ list }); setAddingRecurring(false);
   }
 
-  function deleteRecurring(id) {
-    saveRecurring({ list: recurringList.filter(r => r.id !== id) });
+  function deleteRecurring(id) { saveRecurring({ list: recurringList.filter(r => r.id !== id) }); }
+  function toggleCustomDay(day) { setRecCustomDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]); }
+
+  function logEntry() {
+    if (!logName.trim()) return;
+    saveMacroLog([{
+      id: makeId(), date: today, name: logName.trim(),
+      calories: logCal || "0", protein: logPro || "0", carbs: logCarb || "0", fat: logFat || "0",
+      time: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
+    }, ...(macroLog || [])]);
+    setAdding(false); setLogName(""); setLogCal(""); setLogPro(""); setLogCarb(""); setLogFat("");
   }
 
-  function toggleCustomDay(day) {
-    setRecCustomDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
+  function removeEntry(id) { saveMacroLog((macroLog || []).filter(e => e.id !== id)); }
+
+  function saveGoals() {
+    saveMacroGoals({ calories: Number(goalCal) || 2000, protein: Number(goalPro) || 150, carbs: Number(goalCarb) || 250, fat: Number(goalFat) || 65 });
+    setEditingGoals(false);
   }
+
+  function pct(val, goal) { return goal > 0 ? Math.min(Math.round((val / goal) * 100), 100) : 0; }
+  function ringColor(p) { return p >= 100 ? "#d48a7b" : p >= 75 ? "#c4a86a" : "#6b8e6b"; }
+
+  const todayEntries = (macroLog || []).filter(e => e.date === today);
+  const todayTotals = todayEntries.reduce((a, e) => ({
+    calories: a.calories + (Number(e.calories) || 0), protein: a.protein + (Number(e.protein) || 0),
+    carbs: a.carbs + (Number(e.carbs) || 0), fat: a.fat + (Number(e.fat) || 0),
+  }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
 
   return (
     <div style={{ animation: "fadeIn 0.3s ease-out" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
-        <div style={{ fontFamily: "var(--display)", fontSize: 24, fontWeight: 700 }}>This Week</div>
-        <div style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>{planned}/21 planned</div>
+      {/* Section toggle */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+        {[
+          { id: "plan", label: "Plan" },
+          { id: "track", label: "Track" },
+          { id: "stats", label: "Stats" },
+        ].map(s => (
+          <button key={s.id} className={`filter-chip ${section === s.id ? "active" : ""}`} onClick={() => setSection(s.id)}>
+            {s.label}
+          </button>
+        ))}
       </div>
 
-      {/* Day cards */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {weekDates.map((date, di) => {
-          const d = new Date(date);
-          const dow = d.getDay();
-          const isToday = date === today;
-          const dayMeals = MEAL_TYPES.map(mt => {
-            const key = `${date}-${mt.id}`;
-            const explicit = meals[key];
-            const rec = !explicit ? getRecurringMeal(date, mt.id) : null;
-            return { ...mt, key, value: explicit || null, recurring: rec };
-          });
-          const filledCount = dayMeals.filter(m => m.value || m.recurring).length;
-          const dayMacros = getDayMacros(date);
+      {/* ─── PLAN SECTION ─── */}
+      {section === "plan" && (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
+            <div style={{ fontFamily: "var(--display)", fontSize: 24, fontWeight: 700 }}>This Week</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>{planned}/21</div>
+          </div>
 
-          return (
-            <Card key={date} style={{
-              padding: 0, overflow: "hidden",
-              animation: `fadeIn 0.3s ease-out ${di * 40}ms both`,
-              border: isToday ? "2px solid var(--accent)" : undefined,
-            }}>
-              <div style={{
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "12px 16px",
-                background: isToday ? "linear-gradient(135deg, rgba(196,149,106,0.12), rgba(196,149,106,0.06))" : undefined,
-              }}>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                  <span style={{ fontWeight: 800, fontSize: 15, color: isToday ? "var(--accent)" : "var(--text)" }}>
-                    {isToday ? "Today" : DAYS_OF_WEEK[dow]}
-                  </span>
-                  <span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>
-                    {d.toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                  </span>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  {dayMacros && (
-                    <span style={{ fontSize: 10, fontWeight: 700, color: "var(--muted)" }}>
-                      {dayMacros.calories} cal · {dayMacros.protein}g P
-                    </span>
-                  )}
-                  <span style={{ fontSize: 11, fontWeight: 700, color: filledCount === 3 ? "#6b8e6b" : "var(--muted)" }}>
-                    {filledCount}/3
-                  </span>
-                </div>
-              </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {weekDates.map((date, di) => {
+              const d = new Date(date + "T12:00:00");
+              const isToday = date === today;
+              const dayMeals = MEAL_TYPES.map(mt => {
+                const key = `${date}-${mt.id}`;
+                return { ...mt, key, value: meals[key] || null, recurring: !meals[key] ? getRecurringMeal(date, mt.id) : null };
+              });
+              const filledCount = dayMeals.filter(m => m.value || m.recurring).length;
+              const dayMacros = getDayMacros(date);
 
-              {dayMeals.map(meal => {
-                const mealName = meal.value || meal.recurring;
-                const recipe = findRecipe(mealName);
-                const logged = isLogged(date, mealName);
-                return (
-                  <div key={meal.key} style={{
-                    padding: "14px 16px", borderTop: "1px solid #f0e6d6",
-                    minHeight: 56, WebkitTapHighlightColor: "transparent",
-                  }}>
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-                      <div style={{ flex: 1, cursor: "pointer" }} onClick={() => openEdit(date, meal.id)}>
-                        <div style={{
-                          fontSize: 10, fontWeight: 800, color: "var(--muted)",
-                          textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4,
-                        }}>
-                          {meal.label}
-                        </div>
-                        {meal.value ? (
-                          <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text)" }}>{meal.value}</div>
-                        ) : meal.recurring ? (
-                          <div style={{ fontSize: 14, fontWeight: 600, color: "var(--muted)", fontStyle: "italic" }}>
-                            {meal.recurring} <span style={{ fontSize: 10, fontWeight: 700, color: "var(--accent)" }}>recurring</span>
-                          </div>
-                        ) : (
-                          <div style={{ fontSize: 14, color: "#ccc", fontWeight: 600 }}>Tap to plan...</div>
-                        )}
-                        {recipe && (recipe.calories || recipe.protein) && (
-                          <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 3, display: "flex", gap: 6 }}>
-                            {recipe.calories && <span>{recipe.calories} cal</span>}
-                            {recipe.protein && <span>{recipe.protein}g protein</span>}
-                            {recipe.time && <span>{recipe.time}</span>}
-                          </div>
-                        )}
-                      </div>
-                      {mealName && saveMacroLog && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); if (!logged) logMealToMacros(date, mealName); }}
-                          disabled={logged}
-                          style={{
-                            background: logged ? "#edf5ed" : "var(--card)",
-                            border: `1.5px solid ${logged ? "#b8d4b8" : "#e0cdb5"}`,
-                            borderRadius: 8, padding: "4px 10px", cursor: logged ? "default" : "pointer",
-                            fontSize: 10, fontWeight: 700, flexShrink: 0, marginTop: 14,
-                            color: logged ? "#4a7a4a" : "var(--muted)",
-                            fontFamily: "var(--body)", WebkitTapHighlightColor: "transparent",
-                          }}
-                        >
-                          {logged ? "Logged" : "Log"}
-                        </button>
-                      )}
+              return (
+                <Card key={date} style={{ padding: 0, overflow: "hidden", animation: `fadeIn 0.3s ease-out ${di * 40}ms both`, border: isToday ? "2px solid var(--accent)" : undefined }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 16px", background: isToday ? "linear-gradient(135deg, rgba(196,149,106,0.12), rgba(196,149,106,0.06))" : undefined }}>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                      <span style={{ fontWeight: 800, fontSize: 15, color: isToday ? "var(--accent)" : "var(--text)" }}>{isToday ? "Today" : DAYS_OF_WEEK[d.getDay()]}</span>
+                      <span style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600 }}>{d.toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      {dayMacros && <span style={{ fontSize: 10, fontWeight: 700, color: "var(--muted)" }}>{dayMacros.calories}cal · {dayMacros.protein}gP</span>}
+                      <span style={{ fontSize: 11, fontWeight: 700, color: filledCount === 3 ? "#6b8e6b" : "var(--muted)" }}>{filledCount}/3</span>
                     </div>
                   </div>
-                );
-              })}
-            </Card>
-          );
-        })}
-      </div>
-
-      {/* Recurring meals section */}
-      <div style={{ marginTop: 24 }}>
-        <button onClick={() => setShowRecurring(!showRecurring)} style={{
-          display: "flex", alignItems: "center", gap: 8, width: "100%",
-          background: "none", border: "none", cursor: "pointer", padding: "4px 0",
-          fontFamily: "var(--body)", WebkitTapHighlightColor: "transparent",
-        }}>
-          <span style={{ fontWeight: 800, fontSize: 14, color: "var(--text)" }}>Recurring Meals</span>
-          <span style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600 }}>
-            {recurringList.length} set
-          </span>
-          <span style={{
-            marginLeft: "auto", fontSize: 10, color: "var(--muted)",
-            transition: "transform 0.25s ease", transform: showRecurring ? "rotate(0deg)" : "rotate(-90deg)",
-          }}>▼</span>
-        </button>
-
-        {showRecurring && (
-          <div style={{ marginTop: 8, animation: "fadeIn 0.25s ease-out" }}>
-            <button className="cozy-btn primary full" onClick={openAddRecurring} style={{ marginBottom: 10 }}>
-              Add Recurring Meal
-            </button>
-
-            {recurringList.length === 0 ? (
-              <Card style={{ padding: 16, textAlign: "center" }}>
-                <div style={{ fontSize: 13, color: "var(--muted)" }}>
-                  No recurring meals yet. Set meals that repeat every week.
-                </div>
-              </Card>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {recurringList.map(r => (
-                  <Card key={r.id} style={{ padding: 0, overflow: "hidden" }}>
-                    <div onClick={() => openEditRecurring(r)} style={{
-                      padding: "12px 16px", cursor: "pointer", WebkitTapHighlightColor: "transparent",
-                    }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <div>
-                          <div style={{ fontWeight: 700, fontSize: 15, color: "var(--text)" }}>{r.name}</div>
-                          <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
-                            {MEAL_TYPES.find(m => m.id === r.type)?.label} · {r.days.join(", ")}
+                  {dayMeals.map(meal => {
+                    const mealName = meal.value || meal.recurring;
+                    const recipe = findRecipe(mealName);
+                    const logged = isLogged(date, mealName);
+                    return (
+                      <div key={meal.key} style={{ padding: "14px 16px", borderTop: "1px solid #f0e6d6", minHeight: 56 }}>
+                        <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                          <div style={{ flex: 1, cursor: "pointer" }} onClick={() => openEdit(date, meal.id)}>
+                            <div style={{ fontSize: 10, fontWeight: 800, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>{meal.label}</div>
+                            {meal.value ? (
+                              <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text)" }}>{meal.value}</div>
+                            ) : meal.recurring ? (
+                              <div style={{ fontSize: 14, fontWeight: 600, color: "var(--muted)", fontStyle: "italic" }}>{meal.recurring} <span style={{ fontSize: 10, color: "var(--accent)" }}>recurring</span></div>
+                            ) : (
+                              <div style={{ fontSize: 14, color: "#ccc", fontWeight: 600 }}>Tap to plan...</div>
+                            )}
+                            {recipe && recipe.calories && <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 3 }}>{recipe.calories} cal · {recipe.protein || 0}g protein</div>}
                           </div>
+                          {mealName && (
+                            <button onClick={() => { if (!logged) logMealToMacros(date, mealName); }} disabled={logged}
+                              style={{ background: logged ? "#edf5ed" : "var(--card)", border: `1.5px solid ${logged ? "#b8d4b8" : "#e0cdb5"}`, borderRadius: 8, padding: "4px 10px", fontSize: 10, fontWeight: 700, flexShrink: 0, marginTop: 14, color: logged ? "#4a7a4a" : "var(--muted)", fontFamily: "var(--body)", cursor: logged ? "default" : "pointer", WebkitTapHighlightColor: "transparent" }}>
+                              {logged ? "Logged" : "Log"}
+                            </button>
+                          )}
                         </div>
                       </div>
+                    );
+                  })}
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Recurring meals */}
+          <div style={{ marginTop: 24 }}>
+            <button onClick={() => setShowRecurring(!showRecurring)} style={{ display: "flex", alignItems: "center", gap: 8, width: "100%", background: "none", border: "none", cursor: "pointer", padding: "4px 0", fontFamily: "var(--body)", WebkitTapHighlightColor: "transparent" }}>
+              <span style={{ fontWeight: 800, fontSize: 14, color: "var(--text)" }}>Recurring Meals</span>
+              <span style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600 }}>{recurringList.length} set</span>
+              <span style={{ marginLeft: "auto", fontSize: 10, color: "var(--muted)", transition: "transform 0.25s ease", transform: showRecurring ? "rotate(0deg)" : "rotate(-90deg)" }}>▼</span>
+            </button>
+            {showRecurring && (
+              <div style={{ marginTop: 8, animation: "fadeIn 0.25s ease-out" }}>
+                <button className="cozy-btn primary full" onClick={openAddRecurring} style={{ marginBottom: 10 }}>Add Recurring Meal</button>
+                {recurringList.map(r => (
+                  <Card key={r.id} style={{ padding: 0, marginBottom: 6 }}>
+                    <div onClick={() => openEditRecurring(r)} style={{ padding: "12px 16px", cursor: "pointer" }}>
+                      <div style={{ fontWeight: 700, fontSize: 15 }}>{r.name}</div>
+                      <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{MEAL_TYPES.find(m => m.id === r.type)?.label} · {r.days.join(", ")}</div>
                     </div>
                   </Card>
                 ))}
               </div>
             )}
           </div>
-        )}
-      </div>
+        </>
+      )}
 
-      {/* Edit meal modal */}
-      <Modal open={!!editing} onClose={() => setEditing(null)} title={
-        editing ? `${editing.date === today ? "Today" : DAYS_OF_WEEK[new Date(editing.date).getDay()]} — ${MEAL_TYPES.find(m => m.id === editing.type)?.label}` : ""
-      }>
+      {/* ─── TRACK SECTION ─── */}
+      {section === "track" && (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
+            <div style={{ fontFamily: "var(--display)", fontSize: 24, fontWeight: 700 }}>Today</div>
+            <button className="filter-chip" onClick={() => { setGoalCal(String(goals.calories)); setGoalPro(String(goals.protein)); setGoalCarb(String(goals.carbs)); setGoalFat(String(goals.fat)); setEditingGoals(true); }} style={{ fontSize: 11, padding: "4px 10px", minHeight: 28 }}>Goals</button>
+          </div>
+
+          {/* Macro rings */}
+          <Card style={{ padding: 16, marginBottom: 14 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, textAlign: "center" }}>
+              {[
+                { label: "Cal", val: todayTotals.calories, goal: goals.calories, unit: "" },
+                { label: "Protein", val: todayTotals.protein, goal: goals.protein, unit: "g" },
+                { label: "Carbs", val: todayTotals.carbs, goal: goals.carbs, unit: "g" },
+                { label: "Fat", val: todayTotals.fat, goal: goals.fat, unit: "g" },
+              ].map(m => {
+                const p = pct(m.val, m.goal);
+                return (
+                  <div key={m.label}>
+                    <div style={{ position: "relative", width: 52, height: 52, margin: "0 auto 4px" }}>
+                      <svg width="52" height="52" viewBox="0 0 52 52">
+                        <circle cx="26" cy="26" r="22" fill="none" stroke="#e8dcc8" strokeWidth="4.5" />
+                        <circle cx="26" cy="26" r="22" fill="none" stroke={ringColor(p)} strokeWidth="4.5" strokeDasharray={`${p * 1.382} 138.2`} strokeLinecap="round" transform="rotate(-90 26 26)" style={{ transition: "stroke-dasharray 0.5s ease" }} />
+                      </svg>
+                      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: "var(--text)" }}>{p}%</div>
+                    </div>
+                    <div style={{ fontSize: 9, fontWeight: 800, color: "var(--muted)", textTransform: "uppercase" }}>{m.label}</div>
+                    <div style={{ fontSize: 11, fontWeight: 700 }}>{Math.round(m.val)}<span style={{ color: "var(--muted)", fontSize: 9 }}>/{m.goal}{m.unit}</span></div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+
+          <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+            <button className="cozy-btn primary" style={{ flex: 1 }} onClick={() => { setAdding("manual"); setLogName(""); setLogCal(""); setLogPro(""); setLogCarb(""); setLogFat(""); }}>Log Food</button>
+            <button className="cozy-btn secondary" style={{ flex: 1 }} onClick={() => setAdding("recipe")}>From Recipe</button>
+          </div>
+
+          {todayEntries.length === 0 ? (
+            <Card style={{ padding: 20, textAlign: "center" }}><div style={{ fontSize: 13, color: "var(--muted)" }}>No food logged today.</div></Card>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {todayEntries.map((entry, i) => (
+                <Card key={entry.id} style={{ padding: 0, animation: `fadeIn 0.2s ease-out ${i * 30}ms both` }}>
+                  <div style={{ display: "flex", alignItems: "center", padding: "12px 14px", gap: 12 }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 700, fontSize: 14 }}>{entry.name}</div>
+                      <div style={{ fontSize: 11, color: "var(--muted)", display: "flex", gap: 8, marginTop: 2 }}>
+                        <span>{entry.calories} cal</span><span>{entry.protein}g P</span>
+                        {entry.time && <span>· {entry.time}</span>}
+                      </div>
+                    </div>
+                    <button onClick={() => removeEntry(entry.id)} style={{ background: "none", border: "none", color: "var(--muted)", fontSize: 16, cursor: "pointer", padding: 4 }}>✕</button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ─── STATS SECTION ─── */}
+      {section === "stats" && (
+        <>
+          <div style={{ fontFamily: "var(--display)", fontSize: 24, fontWeight: 700, marginBottom: 14 }}>Weekly Stats</div>
+
+          {/* Calorie bar chart */}
+          <Card style={{ padding: 16, marginBottom: 14 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: "var(--muted)", marginBottom: 12, textTransform: "uppercase", letterSpacing: 0.3 }}>Calories</div>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 120 }}>
+              {weekData.map((d, i) => {
+                const h = maxCal > 0 ? (d.calories / maxCal) * 100 : 0;
+                const overGoal = d.calories > goals.calories;
+                return (
+                  <div key={d.date} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: "var(--muted)" }}>{d.calories > 0 ? d.calories : ""}</div>
+                    <div style={{ width: "100%", height: 100, display: "flex", alignItems: "flex-end" }}>
+                      <div style={{
+                        width: "100%", height: `${h}%`, minHeight: d.calories > 0 ? 4 : 0,
+                        borderRadius: "4px 4px 0 0",
+                        background: overGoal ? "linear-gradient(180deg, #d48a7b, #c47a6b)" : "linear-gradient(180deg, #6b8e6b, #5a7a5a)",
+                        transition: "height 0.5s ease",
+                      }} />
+                    </div>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: d.date === today ? "var(--accent)" : "var(--muted)" }}>{d.label}</div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ borderTop: "1px dashed #e0cdb5", marginTop: 4, position: "relative" }}>
+              <span style={{ position: "absolute", right: 0, top: -8, fontSize: 8, color: "var(--muted)" }}>Goal: {goals.calories}</span>
+            </div>
+          </Card>
+
+          {/* Protein bar chart */}
+          <Card style={{ padding: 16, marginBottom: 14 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: "var(--muted)", marginBottom: 12, textTransform: "uppercase", letterSpacing: 0.3 }}>Protein</div>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 100 }}>
+              {weekData.map(d => {
+                const maxP = Math.max(goals.protein, ...weekData.map(x => x.protein));
+                const h = maxP > 0 ? (d.protein / maxP) * 100 : 0;
+                return (
+                  <div key={d.date} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: "var(--muted)" }}>{d.protein > 0 ? d.protein + "g" : ""}</div>
+                    <div style={{ width: "100%", height: 80, display: "flex", alignItems: "flex-end" }}>
+                      <div style={{ width: "100%", height: `${h}%`, minHeight: d.protein > 0 ? 4 : 0, borderRadius: "4px 4px 0 0", background: "linear-gradient(180deg, #8ab4d4, #7aa4c4)", transition: "height 0.5s ease" }} />
+                    </div>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: d.date === today ? "var(--accent)" : "var(--muted)" }}>{d.label}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+
+          {/* Summary stats */}
+          <Card style={{ padding: 16 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: "var(--muted)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.3 }}>7-Day Summary</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              {[
+                { label: "Avg Calories", val: Math.round(weekData.reduce((s, d) => s + d.calories, 0) / 7) },
+                { label: "Avg Protein", val: Math.round(weekData.reduce((s, d) => s + d.protein, 0) / 7) + "g" },
+                { label: "Days Tracked", val: weekData.filter(d => d.entries > 0).length + "/7" },
+                { label: "Goal Hit Rate", val: Math.round(weekData.filter(d => d.calories >= goals.calories * 0.9 && d.calories <= goals.calories * 1.1).length / 7 * 100) + "%" },
+              ].map(s => (
+                <div key={s.label}>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: "var(--text)" }}>{s.val}</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "var(--muted)" }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </>
+      )}
+
+      {/* ─── MODALS ─── */}
+      <Modal open={!!editing} onClose={() => setEditing(null)} title={editing ? `${editing.date === today ? "Today" : DAYS_OF_WEEK[new Date(editing.date + "T12:00:00").getDay()]} — ${MEAL_TYPES.find(m => m.id === editing.type)?.label}` : ""}>
         {editing && (
           <div>
             {!meals[`${editing.date}-${editing.type}`] && getRecurringMeal(editing.date, editing.type) && (
-              <div style={{ fontSize: 12, color: "var(--accent)", fontWeight: 600, marginBottom: 10 }}>
-                Recurring: {getRecurringMeal(editing.date, editing.type)} — type below to override
-              </div>
+              <div style={{ fontSize: 12, color: "var(--accent)", fontWeight: 600, marginBottom: 10 }}>Recurring: {getRecurringMeal(editing.date, editing.type)} — type below to override</div>
             )}
-            <input ref={inputRef} className="cozy-input" placeholder="What's cooking?"
-              value={mealInput} onChange={e => setMealInput(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter") saveMeal(); }}
-              style={{ marginBottom: 10 }}
-            />
-
-            {/* Quick pick from recipes */}
+            <input ref={inputRef} className="cozy-input" placeholder="What's cooking?" value={mealInput} onChange={e => setMealInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter") saveMeal(); }} style={{ marginBottom: 10 }} />
             {recipes && recipes.length > 0 && !mealInput && (
               <div style={{ marginBottom: 12 }}>
-                <div style={{ fontSize: 10, fontWeight: 800, color: "var(--muted)", textTransform: "uppercase", letterSpacing: 0.3, marginBottom: 6 }}>
-                  Quick pick from recipes
-                </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 5, maxHeight: 120, overflowY: "auto" }}>
-                  {recipes.map(r => (
-                    <button key={r.id} className="quick-chip" onClick={() => setMealInput(r.name)}
-                      style={{ fontSize: 12, padding: "5px 10px" }}>
-                      {r.name}
-                      {r.calories && <span style={{ fontSize: 9, color: "var(--muted)", marginLeft: 4 }}>{r.calories}cal</span>}
-                    </button>
-                  ))}
+                <div style={{ fontSize: 10, fontWeight: 800, color: "var(--muted)", textTransform: "uppercase", marginBottom: 6 }}>Quick pick</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 5, maxHeight: 100, overflowY: "auto" }}>
+                  {recipes.map(r => (<button key={r.id} className="quick-chip" onClick={() => setMealInput(r.name)} style={{ fontSize: 12, padding: "5px 10px" }}>{r.name}</button>))}
                 </div>
               </div>
             )}
-
-            {/* Show matched recipe macros */}
             {mealInput && findRecipe(mealInput) && (
               <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 10, padding: "6px 10px", background: "#f5f0e8", borderRadius: 8 }}>
-                {findRecipe(mealInput).calories && <span>{findRecipe(mealInput).calories} cal</span>}
-                {findRecipe(mealInput).protein && <span> · {findRecipe(mealInput).protein}g protein</span>}
-                {findRecipe(mealInput).time && <span> · {findRecipe(mealInput).time}</span>}
+                {findRecipe(mealInput).calories} cal · {findRecipe(mealInput).protein || 0}g protein
               </div>
             )}
-
             <div style={{ display: "flex", gap: 8 }}>
-              <button className="cozy-btn primary" style={{ flex: 1 }} onClick={saveMeal}>
-                {meals[`${editing.date}-${editing.type}`] ? "Update" : "Save"}
-              </button>
-              {meals[`${editing.date}-${editing.type}`] && (
-                <button className="cozy-btn danger" onClick={clearMeal}>Clear</button>
-              )}
+              <button className="cozy-btn primary" style={{ flex: 1 }} onClick={saveMeal}>{meals[`${editing.date}-${editing.type}`] ? "Update" : "Save"}</button>
+              {meals[`${editing.date}-${editing.type}`] && <button className="cozy-btn danger" onClick={clearMeal}>Clear</button>}
               <button className="cozy-btn secondary" onClick={() => setEditing(null)}>Cancel</button>
             </div>
           </div>
         )}
       </Modal>
 
-      {/* Add/Edit recurring modal */}
       <Modal open={addingRecurring} onClose={() => setAddingRecurring(false)} title={editingRecId ? "Edit Recurring" : "Add Recurring Meal"}>
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <input className="cozy-input" placeholder="Meal name (e.g. Cereal, Eggs & Toast)" value={recName}
-            onChange={e => setRecName(e.target.value)} />
-
+          <input className="cozy-input" placeholder="Meal name" value={recName} onChange={e => setRecName(e.target.value)} />
           <div>
             <label style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: 6 }}>Meal</label>
-            <div style={{ display: "flex", gap: 6 }}>
-              {MEAL_TYPES.map(mt => (
-                <button key={mt.id} className={`filter-chip ${recType === mt.id ? "active" : ""}`}
-                  onClick={() => setRecType(mt.id)}>{mt.label}</button>
-              ))}
-            </div>
+            <div style={{ display: "flex", gap: 6 }}>{MEAL_TYPES.map(mt => (<button key={mt.id} className={`filter-chip ${recType === mt.id ? "active" : ""}`} onClick={() => setRecType(mt.id)}>{mt.label}</button>))}</div>
           </div>
-
           <div>
             <label style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: 6 }}>Repeats on</label>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
-              {[
-                { id: "weekdays", label: "Weekdays" },
-                { id: "weekend", label: "Weekend" },
-                { id: "everyday", label: "Everyday" },
-                { id: "custom", label: "Custom" },
-              ].map(opt => (
-                <button key={opt.id} className={`filter-chip ${recDays === opt.id ? "active" : ""}`}
-                  onClick={() => setRecDays(opt.id)}>{opt.label}</button>
-              ))}
+              {[{ id: "weekdays", label: "Weekdays" }, { id: "weekend", label: "Weekend" }, { id: "everyday", label: "Everyday" }, { id: "custom", label: "Custom" }].map(opt => (<button key={opt.id} className={`filter-chip ${recDays === opt.id ? "active" : ""}`} onClick={() => setRecDays(opt.id)}>{opt.label}</button>))}
             </div>
             {recDays === "custom" && (
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {DAYS_OF_WEEK.map(day => (
-                  <button key={day} className={`filter-chip ${recCustomDays.includes(day) ? "active" : ""}`}
-                    onClick={() => toggleCustomDay(day)} style={{ minWidth: 44, justifyContent: "center" }}>{day}</button>
-                ))}
-              </div>
+              <div style={{ display: "flex", gap: 6 }}>{DAYS_OF_WEEK.map(day => (<button key={day} className={`filter-chip ${recCustomDays.includes(day) ? "active" : ""}`} onClick={() => toggleCustomDay(day)} style={{ minWidth: 44, justifyContent: "center" }}>{day}</button>))}</div>
             )}
           </div>
-
           <div style={{ display: "flex", gap: 8 }}>
-            <button className="cozy-btn primary" style={{ flex: 1 }} onClick={saveRecurringMeal}>
-              {editingRecId ? "Update" : "Save"}
-            </button>
-            {editingRecId && (
-              <button className="cozy-btn danger" onClick={() => { deleteRecurring(editingRecId); setAddingRecurring(false); }}>
-                Delete
-              </button>
-            )}
+            <button className="cozy-btn primary" style={{ flex: 1 }} onClick={saveRecurringMeal}>{editingRecId ? "Update" : "Save"}</button>
+            {editingRecId && <button className="cozy-btn danger" onClick={() => { deleteRecurring(editingRecId); setAddingRecurring(false); }}>Delete</button>}
           </div>
+        </div>
+      </Modal>
+
+      <Modal open={adding === "manual"} onClose={() => setAdding(false)} title="Log Food">
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <input className="cozy-input" placeholder="What did you eat?" value={logName} onChange={e => setLogName(e.target.value)} />
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <div><label style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: 4 }}>Calories</label><input className="cozy-input" placeholder="0" value={logCal} onChange={e => setLogCal(e.target.value)} inputMode="numeric" /></div>
+            <div><label style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: 4 }}>Protein (g)</label><input className="cozy-input" placeholder="0" value={logPro} onChange={e => setLogPro(e.target.value)} inputMode="numeric" /></div>
+            <div><label style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: 4 }}>Carbs (g)</label><input className="cozy-input" placeholder="0" value={logCarb} onChange={e => setLogCarb(e.target.value)} inputMode="numeric" /></div>
+            <div><label style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: 4 }}>Fat (g)</label><input className="cozy-input" placeholder="0" value={logFat} onChange={e => setLogFat(e.target.value)} inputMode="numeric" /></div>
+          </div>
+          <button className="cozy-btn primary full" onClick={logEntry} disabled={!logName.trim()}>Log</button>
+        </div>
+      </Modal>
+
+      <Modal open={adding === "recipe"} onClose={() => setAdding(false)} title="Log a Recipe">
+        <div style={{ maxHeight: "50vh", overflowY: "auto" }}>
+          {(recipes || []).map(r => (
+            <button key={r.id} onClick={() => { logMealToMacros(today, r.name); setAdding(false); }} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%", padding: "12px 14px", borderRadius: 12, border: "none", background: "transparent", cursor: "pointer", textAlign: "left", fontFamily: "var(--body)", borderBottom: "1px solid #f0e6d6" }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 14 }}>{r.name}</div>
+                <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 1 }}>{r.calories || 0} cal · {r.protein || 0}g protein</div>
+              </div>
+              <span style={{ fontSize: 12, color: "var(--accent)", fontWeight: 700 }}>+ Log</span>
+            </button>
+          ))}
+        </div>
+      </Modal>
+
+      <Modal open={editingGoals} onClose={() => setEditingGoals(false)} title="Daily Goals">
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <div><label style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: 4 }}>Calories</label><input className="cozy-input" value={goalCal} onChange={e => setGoalCal(e.target.value)} inputMode="numeric" /></div>
+            <div><label style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: 4 }}>Protein (g)</label><input className="cozy-input" value={goalPro} onChange={e => setGoalPro(e.target.value)} inputMode="numeric" /></div>
+            <div><label style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: 4 }}>Carbs (g)</label><input className="cozy-input" value={goalCarb} onChange={e => setGoalCarb(e.target.value)} inputMode="numeric" /></div>
+            <div><label style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: 4 }}>Fat (g)</label><input className="cozy-input" value={goalFat} onChange={e => setGoalFat(e.target.value)} inputMode="numeric" /></div>
+          </div>
+          <button className="cozy-btn primary full" onClick={saveGoals}>Save Goals</button>
         </div>
       </Modal>
     </div>

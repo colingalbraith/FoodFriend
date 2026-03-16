@@ -19,5 +19,5 @@ export const TABS = [
   { id: "meals", label: "Meals" },
   { id: "shopping", label: "Shop" },
   { id: "chef", label: "Cook" },
-  { id: "macros", label: "Macros" },
+  { id: "gym", label: "Gym" },
 ];

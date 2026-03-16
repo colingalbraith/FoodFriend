@@ -9,6 +9,7 @@ export const STORAGE_KEYS = {
   recurring: "ff2-recurring",
   macroLog: "ff2-macrolog",
   macroGoals: "ff2-macrogoals",
+  gymLog: "ff2-gymlog",
 };
 
 export const DEFAULT_RECIPES = [
