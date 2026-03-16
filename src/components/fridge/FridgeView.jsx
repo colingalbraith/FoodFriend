@@ -1,7 +1,5 @@
-import { CATEGORY_COLORS } from "../../constants/categories";
 import { daysUntil } from "../../utils/dateHelpers";
 
-// Which shelf each category lives on
 const SHELF_MAP = {
   Frozen: 0,
   Dairy: 1, Beverages: 1, Condiments: 1,
@@ -9,10 +7,98 @@ const SHELF_MAP = {
   Produce: 3, Bakery: 3, Snacks: 3, Other: 2,
 };
 
-const SHELF_LABELS = ["Freezer", "Top Shelf", "Middle", "Crisper"];
+// Food name → emoji mapping (keyword match)
+const FOOD_EMOJI = {
+  apple: "🍎", banana: "🍌", orange: "🍊", lemon: "🍋", lime: "🍋",
+  grape: "🍇", strawberry: "🍓", blueberry: "🫐", raspberry: "🫐",
+  cherry: "🍒", peach: "🍑", pear: "🍐", watermelon: "🍉", melon: "🍈",
+  mango: "🥭", kiwi: "🥝", pineapple: "🍍", coconut: "🥥", avocado: "🥑",
+  tomato: "🍅", corn: "🌽", pepper: "🌶️", "bell pepper": "🫑",
+  broccoli: "🥦", lettuce: "🥬", spinach: "🥬", kale: "🥬", arugula: "🥬",
+  cucumber: "🥒", carrot: "🥕", potato: "🥔", "sweet potato": "🍠",
+  onion: "🧅", garlic: "🧄", mushroom: "🍄", ginger: "🫚",
+  egg: "🥚", eggs: "🥚",
+  milk: "🥛", "oat milk": "🥛", "almond milk": "🥛",
+  cheese: "🧀", butter: "🧈", yogurt: "🥛",
+  chicken: "🍗", turkey: "🍗", steak: "🥩", beef: "🥩",
+  pork: "🥩", bacon: "🥓", ham: "🍖", sausage: "🌭",
+  fish: "🐟", salmon: "🐟", tuna: "🐟", shrimp: "🦐", crab: "🦀",
+  lobster: "🦞",
+  bread: "🍞", bagel: "🥯", croissant: "🥐", pretzel: "🥨",
+  rice: "🍚", pasta: "🍝", noodle: "🍜", spaghetti: "🍝",
+  pizza: "🍕", burger: "🍔", sandwich: "🥪", taco: "🌮", burrito: "🌯",
+  "hot dog": "🌭", fries: "🍟",
+  cake: "🍰", cookie: "🍪", donut: "🍩", chocolate: "🍫",
+  candy: "🍬", "ice cream": "🍦", pie: "🥧", cupcake: "🧁",
+  coffee: "☕", tea: "🍵", juice: "🧃", water: "💧",
+  wine: "🍷", beer: "🍺", soda: "🥤",
+  honey: "🍯", jam: "🫙", "peanut butter": "🥜", nut: "🥜", almond: "🥜",
+  bean: "🫘", "black bean": "🫘", lentil: "🫘", chickpea: "🫘",
+  tofu: "🧊", "soy sauce": "🫙",
+  salt: "🧂", oil: "🫒", "olive oil": "🫒", vinegar: "🫙",
+  flour: "🌾", oat: "🌾", cereal: "🥣",
+  "protein powder": "🥛", creatine: "💊", supplement: "💊",
+  soup: "🍲", stew: "🍲", curry: "🍛", salad: "🥗",
+  sushi: "🍣", dumpling: "🥟", "spring roll": "🥟",
+  waffle: "🧇", pancake: "🥞",
+  popcorn: "🍿", chip: "🍿",
+  "tomato paste": "🍅", "cream cheese": "🧀", "sour cream": "🥛",
+  "ground beef": "🥩", "ground turkey": "🍗", "chicken breast": "🍗",
+};
+
+const CATEGORY_FALLBACK = {
+  Produce: "🥬", Dairy: "🧀", Meat: "🥩", Seafood: "🐟",
+  Grains: "🌾", Frozen: "🧊", Condiments: "🫙", Beverages: "🥤",
+  Snacks: "🍪", Bakery: "🍞", Leftovers: "🍲", Other: "🍽️",
+};
+
+function getFoodEmoji(name, category) {
+  const key = name.toLowerCase().trim();
+  // Exact match
+  if (FOOD_EMOJI[key]) return FOOD_EMOJI[key];
+  // Partial match — check if any keyword is in the name or name is in keyword
+  for (const [k, v] of Object.entries(FOOD_EMOJI)) {
+    if (key.includes(k) || k.includes(key)) return v;
+  }
+  // Singular/plural
+  const singular = key.endsWith("s") ? key.slice(0, -1) : key;
+  if (FOOD_EMOJI[singular]) return FOOD_EMOJI[singular];
+  const plural = key + "s";
+  if (FOOD_EMOJI[plural]) return FOOD_EMOJI[plural];
+  // Category fallback
+  return CATEGORY_FALLBACK[category] || "🍽️";
+}
+
+function FoodItem({ item, index }) {
+  const days = daysUntil(item.expiry);
+  const isExpiring = days >= 0 && days <= 3;
+  const isExpired = days < 0;
+  const emoji = getFoodEmoji(item.name, item.category);
+
+  return (
+    <div style={{
+      position: "relative",
+      animation: `popIn 0.3s ease-out ${index * 60}ms both`,
+      opacity: isExpired ? 0.3 : 1,
+      filter: isExpired ? "grayscale(0.5)" : "none",
+      transition: "opacity 0.3s ease",
+      fontSize: 22,
+      lineHeight: 1,
+    }}>
+      {emoji}
+      {isExpiring && (
+        <div style={{
+          position: "absolute", top: -2, right: -2,
+          width: 7, height: 7, borderRadius: "50%",
+          background: "#e74c3c", border: "1.5px solid white",
+          animation: "gentlePulse 1.5s ease-in-out infinite",
+        }} />
+      )}
+    </div>
+  );
+}
 
 export default function FridgeView({ items }) {
-  // Distribute items into shelves
   const shelves = [[], [], [], []];
   items.forEach(item => {
     const shelf = SHELF_MAP[item.category] ?? 2;
@@ -21,115 +107,125 @@ export default function FridgeView({ items }) {
 
   const totalCapacity = 30;
   const fullness = Math.min(items.length / totalCapacity, 1);
+  const isEmpty = items.length === 0;
 
   return (
-    <div style={{ marginBottom: 16, animation: "popIn 0.4s ease-out" }}>
+    <div style={{ marginBottom: 20, animation: "popIn 0.5s ease-out" }}>
       <div style={{
         position: "relative",
         width: "100%",
-        maxWidth: 300,
+        maxWidth: 240,
         margin: "0 auto",
-        aspectRatio: "3 / 4",
+        aspectRatio: "5 / 7",
       }}>
+        {/* Shadow */}
+        <div style={{
+          position: "absolute", bottom: -6, left: "10%", right: "10%", height: 12,
+          background: "radial-gradient(ellipse, rgba(139,109,71,0.12) 0%, transparent 70%)",
+          borderRadius: "50%",
+        }} />
+
         {/* Fridge body */}
         <div style={{
           position: "absolute", inset: 0,
-          background: "linear-gradient(180deg, #d4b896 0%, #c4a882 100%)",
-          borderRadius: 20,
-          boxShadow: "0 4px 20px rgba(139,109,71,0.15), inset 0 1px 0 rgba(255,255,255,0.3)",
+          background: "linear-gradient(170deg, #e8dcc8 0%, #d4c4a8 40%, #c4b496 100%)",
+          borderRadius: 22,
+          boxShadow: "0 6px 24px rgba(139,109,71,0.18), inset 0 1px 0 rgba(255,255,255,0.4)",
         }} />
 
-        {/* Fridge interior */}
+        {/* Interior */}
         <div style={{
           position: "absolute",
-          top: 8, left: 8, right: 8, bottom: 8,
-          background: "linear-gradient(180deg, #f8f4ee 0%, #fffaf3 100%)",
-          borderRadius: 14,
-          display: "flex",
-          flexDirection: "column",
+          top: 7, left: 7, right: 7, bottom: 7,
+          background: "linear-gradient(180deg, #faf8f4 0%, #fffcf7 100%)",
+          borderRadius: 16,
+          display: "flex", flexDirection: "column",
           overflow: "hidden",
         }}>
-          {/* Freezer compartment (shelf 0) */}
+          {/* Freezer */}
           <div style={{
-            flex: "0 0 22%",
-            borderBottom: "3px solid #e0d0b8",
+            flex: "0 0 22%", borderBottom: "3px solid #ddd0bc",
             position: "relative",
-            background: "linear-gradient(180deg, #e8f0f8 0%, #f0f4f8 100%)",
+            background: "linear-gradient(180deg, #e6eef6 0%, #eef3f8 100%)",
+            overflow: "hidden",
           }}>
             <div style={{
-              position: "absolute", top: 4, left: 8,
-              fontSize: 8, fontWeight: 700, color: "#8ab4d4", opacity: 0.6,
-              letterSpacing: 0.5, textTransform: "uppercase",
-            }}>
-              {SHELF_LABELS[0]}
-            </div>
+              position: "absolute", inset: 0, opacity: 0.12,
+              background: "repeating-linear-gradient(120deg, transparent, transparent 10px, rgba(255,255,255,0.8) 10px, rgba(255,255,255,0.8) 11px)",
+            }} />
             <ShelfItems items={shelves[0]} />
           </div>
 
-          {/* Main compartment shelves */}
-          {[1, 2, 3].map(shelfIdx => (
-            <div key={shelfIdx} style={{
-              flex: shelfIdx === 3 ? "0 0 28%" : "1",
-              borderBottom: shelfIdx < 3 ? "2px solid #e8dcc8" : "none",
-              position: "relative",
-              background: shelfIdx === 3
-                ? "linear-gradient(180deg, #f0f8f0 0%, #f5faf5 100%)"
-                : undefined,
-            }}>
-              <div style={{
-                position: "absolute", top: 3, left: 8,
-                fontSize: 7, fontWeight: 700, color: "var(--muted)", opacity: 0.4,
-                letterSpacing: 0.5, textTransform: "uppercase",
-              }}>
-                {SHELF_LABELS[shelfIdx]}
-              </div>
-              <ShelfItems items={shelves[shelfIdx]} />
-            </div>
-          ))}
+          {/* Top shelf */}
+          <div style={{ flex: 1, borderBottom: "2px solid #e8dcc8", position: "relative" }}>
+            <ShelfItems items={shelves[1]} />
+          </div>
 
-          {/* Fridge light glow */}
+          {/* Middle shelf */}
+          <div style={{ flex: 1, borderBottom: "2px solid #e8dcc8", position: "relative" }}>
+            <ShelfItems items={shelves[2]} />
+          </div>
+
+          {/* Crisper */}
           <div style={{
-            position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)",
-            width: "60%", height: 30,
-            background: "radial-gradient(ellipse, rgba(255,248,230,0.8) 0%, transparent 70%)",
+            flex: "0 0 26%", position: "relative",
+            background: "linear-gradient(180deg, #eef5ee 0%, #f4faf4 100%)",
+          }}>
+            <div style={{
+              position: "absolute", top: 0, left: 12, right: 12, height: 2,
+              background: "linear-gradient(90deg, transparent, #c8d8c0, transparent)", borderRadius: 1,
+            }} />
+            <ShelfItems items={shelves[3]} />
+          </div>
+
+          {/* Light glow */}
+          <div style={{
+            position: "absolute", top: -5, left: "50%", transform: "translateX(-50%)",
+            width: "80%", height: 35,
+            background: "radial-gradient(ellipse, rgba(255,252,240,0.9) 0%, transparent 70%)",
             pointerEvents: "none",
           }} />
+
+          {isEmpty && (
+            <div style={{
+              position: "absolute", inset: 0,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "var(--muted)", opacity: 0.35, marginTop: 16 }}>
+                Add some food!
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Handle */}
         <div style={{
-          position: "absolute",
-          right: -4, top: "38%",
-          width: 6, height: 40,
-          background: "linear-gradient(180deg, #b89878 0%, #a8886a 100%)",
-          borderRadius: "0 4px 4px 0",
-          boxShadow: "1px 1px 3px rgba(0,0,0,0.1)",
+          position: "absolute", right: -3, top: "36%",
+          width: 5, height: 36,
+          background: "linear-gradient(180deg, #c4a882 0%, #b09070 100%)",
+          borderRadius: "0 3px 3px 0",
+          boxShadow: "1px 1px 4px rgba(0,0,0,0.1)",
         }} />
 
-        {/* Fullness indicator */}
-        <div style={{
-          position: "absolute", bottom: -8, left: "50%", transform: "translateX(-50%)",
-          display: "flex", alignItems: "center", gap: 6,
-          background: "var(--card)", borderRadius: 12, padding: "4px 12px",
-          boxShadow: "0 2px 8px rgba(139,109,71,0.1)",
-          border: "1.5px solid var(--border)",
-        }}>
+        {/* Magnets */}
+        <div style={{ position: "absolute", top: 14, left: 14, width: 8, height: 8, borderRadius: 2, background: "#d48a7b", opacity: 0.6, transform: "rotate(5deg)" }} />
+        <div style={{ position: "absolute", top: 12, left: 26, width: 6, height: 9, borderRadius: 2, background: "#8ab4d4", opacity: 0.5, transform: "rotate(-8deg)" }} />
+        <div style={{ position: "absolute", top: 18, right: 16, width: 7, height: 7, borderRadius: "50%", background: "#e8c86a", opacity: 0.5 }} />
+      </div>
+
+      {/* Fullness */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 12 }}>
+        <div style={{ width: 60, height: 5, borderRadius: 3, background: "#e8dcc8", overflow: "hidden" }}>
           <div style={{
-            width: 50, height: 5, borderRadius: 3,
-            background: "#e8dcc8",
-            overflow: "hidden",
-          }}>
-            <div style={{
-              height: "100%", borderRadius: 3,
-              width: `${fullness * 100}%`,
-              background: fullness > 0.8 ? "#d48a7b" : fullness > 0.5 ? "#e8c86a" : "#7cb87c",
-              transition: "width 0.5s ease-out",
-            }} />
-          </div>
-          <span style={{ fontSize: 10, fontWeight: 700, color: "var(--muted)" }}>
-            {items.length} items
-          </span>
+            height: "100%", borderRadius: 3,
+            width: `${fullness * 100}%`,
+            background: fullness > 0.8 ? "#d48a7b" : fullness > 0.5 ? "#e8c86a" : "#7cb87c",
+            transition: "width 0.6s ease-out",
+          }} />
         </div>
+        <span style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)" }}>
+          {items.length === 0 ? "Empty" : `${items.length} item${items.length !== 1 ? "s" : ""}`}
+        </span>
       </div>
     </div>
   );
@@ -137,60 +233,19 @@ export default function FridgeView({ items }) {
 
 function ShelfItems({ items }) {
   if (items.length === 0) return null;
-
   return (
     <div style={{
-      position: "absolute", bottom: 6, left: 6, right: 6,
-      display: "flex", flexWrap: "wrap", gap: 3,
+      position: "absolute", bottom: 2, left: 4, right: 4, top: 2,
+      display: "flex", flexWrap: "wrap", gap: 2,
       alignItems: "flex-end", alignContent: "flex-end",
+      justifyContent: "center",
     }}>
-      {items.slice(0, 12).map((item, i) => {
-        const days = daysUntil(item.expiry);
-        const isExpiring = days >= 0 && days <= 3;
-        const isExpired = days < 0;
-        const color = CATEGORY_COLORS[item.category] || "#b0a090";
-
-        return (
-          <div
-            key={item.id}
-            title={`${item.name} - ${days}d`}
-            style={{
-              height: 18,
-              padding: "0 6px",
-              borderRadius: 5,
-              background: color,
-              opacity: isExpired ? 0.4 : 0.85,
-              display: "flex", alignItems: "center",
-              animation: `popIn 0.3s ease-out ${i * 40}ms both`,
-              position: "relative",
-              maxWidth: 70,
-            }}
-          >
-            <span style={{
-              fontSize: 8, fontWeight: 700, color: "white",
-              textShadow: "0 0.5px 1px rgba(0,0,0,0.2)",
-              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-            }}>
-              {item.name}
-            </span>
-            {isExpiring && (
-              <div style={{
-                position: "absolute", top: -2, right: -2,
-                width: 6, height: 6, borderRadius: "50%",
-                background: "#e74c3c",
-                border: "1px solid white",
-                animation: "gentlePulse 1.5s ease-in-out infinite",
-              }} />
-            )}
-          </div>
-        );
-      })}
-      {items.length > 12 && (
-        <div style={{
-          fontSize: 8, fontWeight: 700, color: "var(--muted)",
-          padding: "0 4px", height: 18, display: "flex", alignItems: "center",
-        }}>
-          +{items.length - 12}
+      {items.slice(0, 6).map((item, i) => (
+        <FoodItem key={item.id} item={item} index={i} />
+      ))}
+      {items.length > 6 && (
+        <div style={{ fontSize: 9, fontWeight: 800, color: "var(--muted)", opacity: 0.4, padding: "0 2px", display: "flex", alignItems: "flex-end" }}>
+          +{items.length - 6}
         </div>
       )}
     </div>
