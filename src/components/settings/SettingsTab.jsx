@@ -336,9 +336,9 @@ export default function SettingsTab({ userProfile, saveUserProfile, macroGoals, 
 
         <div>
           <label style={labelStyle}>Days per Week</label>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 5 }}>
             {DAYS_OPTIONS.map(d => (
-              <button key={d} className={`filter-chip ${daysPerWeek === d ? "active" : ""}`} onClick={() => setDaysPerWeek(d)} style={{ minWidth: 36, justifyContent: "center" }}>{d}</button>
+              <button key={d} className={`filter-chip ${daysPerWeek === d ? "active" : ""}`} onClick={() => setDaysPerWeek(d)} style={{ justifyContent: "center", padding: "8px 0", fontSize: 13 }}>{d}</button>
             ))}
           </div>
         </div>
@@ -347,9 +347,9 @@ export default function SettingsTab({ userProfile, saveUserProfile, macroGoals, 
       {/* Dietary */}
       <Card style={{ marginBottom: 14, padding: 16 }}>
         <div style={sectionTitle}>Dietary Restrictions</div>
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 6 }}>
           {RESTRICTION_OPTIONS.map(r => (
-            <button key={r} className={`filter-chip ${restrictions.includes(r) ? "active" : ""}`} onClick={() => toggleRestriction(r)}>{r}</button>
+            <button key={r} className={`filter-chip ${restrictions.includes(r) ? "active" : ""}`} onClick={() => toggleRestriction(r)} style={{ justifyContent: "center", padding: "8px 4px", fontSize: 11 }}>{r}</button>
           ))}
         </div>
       </Card>
