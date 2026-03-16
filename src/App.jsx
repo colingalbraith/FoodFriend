@@ -190,6 +190,8 @@ export default function FridgeFriend() {
         <Walkthrough
           onComplete={() => setShowWalkthrough(false)}
           onSwitchTab={setTab}
+          items={items}
+          workoutTemplates={workoutTemplates}
         />
       )}
 
