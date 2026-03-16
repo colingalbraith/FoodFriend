@@ -22,11 +22,10 @@ function todayKey() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-export default function MealPlanTab({ meals, saveMeals, items, recurring, saveRecurring, recipes, saveRecipes, macroLog, saveMacroLog, macroGoals, saveMacroGoals, bodyWeight, saveBodyWeight, userProfile, shopping, saveShopping }) {
+export default function MealPlanTab({ meals, saveMeals, items, recurring, saveRecurring, recipes, saveRecipes, macroLog, saveMacroLog, macroGoals, saveMacroGoals, userProfile, shopping, saveShopping }) {
   const weekDates = getWeekDates();
   const today = weekDates[0];
-  const [section, setSection] = useState("plan"); // "plan" | "track" | "weight" | "recipes" | "stats"
-  const [weightInput, setWeightInput] = useState("");
+  const [section, setSection] = useState("plan"); // "plan" | "track" | "recipes" | "stats"
   const [recipeSearch, setRecipeSearch] = useState("");
   const [recipeLimit, setRecipeLimit] = useState(20);
   const [addingRecipe, setAddingRecipe] = useState(false);
@@ -214,7 +213,6 @@ export default function MealPlanTab({ meals, saveMeals, items, recurring, saveRe
           { id: "plan", label: "Plan" },
           { id: "track", label: "Track" },
           { id: "recipes", label: "Recipes" },
-          { id: "weight", label: "Weight" },
           { id: "stats", label: "Stats" },
         ].map(s => (
           <button key={s.id} className={`filter-chip ${section === s.id ? "active" : ""}`} onClick={() => setSection(s.id)}>
@@ -607,133 +605,6 @@ export default function MealPlanTab({ meals, saveMeals, items, recurring, saveRe
                 </div>
               </div>
             </Modal>
-          </>
-        );
-      })()}
-
-      {/* ─── WEIGHT SECTION ─── */}
-      {section === "weight" && (() => {
-        const entries = (bodyWeight || []).sort((a, b) => a.date.localeCompare(b.date));
-        const last30 = entries.slice(-30);
-        const todayEntry = entries.find(e => e.date === today);
-        const latestWeight = entries.length > 0 ? Number(entries[entries.length - 1].weight) : null;
-        const startWeight = last30.length > 0 ? Number(last30[0].weight) : null;
-        const change = latestWeight && startWeight ? (latestWeight - startWeight).toFixed(1) : null;
-        const avg7 = (() => {
-          const recent = entries.slice(-7);
-          return recent.length > 0 ? (recent.reduce((s, e) => s + Number(e.weight), 0) / recent.length).toFixed(1) : null;
-        })();
-
-        // Chart data
-        const chartData = last30.length >= 2 ? last30 : [];
-        const minW = chartData.length > 0 ? Math.min(...chartData.map(e => Number(e.weight))) - 3 : 0;
-        const maxW = chartData.length > 0 ? Math.max(...chartData.map(e => Number(e.weight))) + 3 : 1;
-        const range = maxW - minW || 1;
-        const points = chartData.map((e, i) => ({
-          x: chartData.length > 1 ? (i / (chartData.length - 1)) * 270 + 15 : 150,
-          y: 130 - ((Number(e.weight) - minW) / range) * 110,
-          ...e,
-        }));
-
-        function logWeight() {
-          if (!weightInput) return;
-          const entry = { id: makeId(), date: today, weight: weightInput, time: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) };
-          const updated = [...(bodyWeight || []).filter(e => e.date !== today), entry];
-          saveBodyWeight(updated);
-          setWeightInput("");
-        }
-
-        return (
-          <>
-            <div style={{ fontFamily: "var(--display)", fontSize: 24, fontWeight: 700, marginBottom: 14 }}>Body Weight</div>
-
-            {/* Current weight + log */}
-            <Card style={{ padding: 20, marginBottom: 14, textAlign: "center" }}>
-              <div style={{ fontSize: 40, fontWeight: 800, color: "var(--text)", animation: "countUp 0.4s ease-out" }}>
-                {todayEntry ? `${todayEntry.weight}` : latestWeight ? `${latestWeight}` : "--"}
-                <span style={{ fontSize: 16, fontWeight: 600, color: "var(--muted)", marginLeft: 4 }}>lb</span>
-              </div>
-              <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
-                {todayEntry ? `Logged today at ${todayEntry.time}` : latestWeight ? "Last logged" : "No data yet"}
-              </div>
-              <div style={{ display: "flex", gap: 8, marginTop: 14, justifyContent: "center" }}>
-                <input className="cozy-input" placeholder="Weight (lb)" value={weightInput} onChange={e => setWeightInput(e.target.value)}
-                  inputMode="decimal" style={{ width: 120, textAlign: "center" }}
-                  onKeyDown={e => { if (e.key === "Enter") logWeight(); }} />
-                <button className="cozy-btn primary" onClick={logWeight} disabled={!weightInput}>Log</button>
-              </div>
-            </Card>
-
-            {/* Weight chart */}
-            {chartData.length >= 2 && (
-              <Card style={{ padding: 16, marginBottom: 14, animation: "fadeIn 0.4s ease-out" }}>
-                <div style={{ fontSize: 12, fontWeight: 800, color: "var(--muted)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.3 }}>30-Day Trend</div>
-                <svg viewBox="0 0 300 150" width="100%" style={{ display: "block" }}>
-                  {/* Grid lines */}
-                  {[0, 0.25, 0.5, 0.75, 1].map(pct => {
-                    const y = 130 - pct * 110;
-                    const val = Math.round(minW + pct * range);
-                    return (
-                      <g key={pct}>
-                        <line x1="15" y1={y} x2="285" y2={y} stroke="#e8dcc8" strokeWidth="0.5" />
-                        <text x="5" y={y + 3} fontSize="7" fill="#b0a090">{val}</text>
-                      </g>
-                    );
-                  })}
-                  {/* Line */}
-                  <polyline points={points.map(p => `${p.x},${p.y}`).join(" ")} fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                  {/* Dots */}
-                  {points.map((p, i) => (
-                    <circle key={i} cx={p.x} cy={p.y} r="3.5" fill="var(--accent)" stroke="var(--card)" strokeWidth="2" style={{ animation: `popIn 0.2s ease-out ${i * 30}ms both` }} />
-                  ))}
-                  {/* Trend line */}
-                  {points.length >= 3 && (() => {
-                    const n = points.length;
-                    const vals = points.map(p => Number(p.weight));
-                    const sumX = points.reduce((s, _, i) => s + i, 0);
-                    const sumY = vals.reduce((s, v) => s + v, 0);
-                    const sumXY = vals.reduce((s, v, i) => s + i * v, 0);
-                    const sumX2 = points.reduce((s, _, i) => s + i * i, 0);
-                    const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
-                    const intercept = (sumY - slope * sumX) / n;
-                    const y1 = 130 - ((intercept - minW) / range) * 110;
-                    const y2 = 130 - ((intercept + slope * (n - 1) - minW) / range) * 110;
-                    return <line x1={points[0].x} y1={y1} x2={points[n - 1].x} y2={y2} stroke="var(--accent)" strokeWidth="1" strokeDasharray="4 3" opacity="0.4" />;
-                  })()}
-                </svg>
-              </Card>
-            )}
-
-            {/* Stats */}
-            {entries.length > 0 && (
-              <Card style={{ padding: 16, animation: "fadeIn 0.3s ease-out 100ms both" }}>
-                <div style={{ fontSize: 12, fontWeight: 800, color: "var(--muted)", marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.3 }}>Summary</div>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  <div>
-                    <div style={{ fontSize: 22, fontWeight: 800, color: "var(--text)" }}>{latestWeight || "--"} <span style={{ fontSize: 12, fontWeight: 600, color: "var(--muted)" }}>lb</span></div>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: "var(--muted)" }}>Current</div>
-                  </div>
-                  {change !== null && (
-                    <div>
-                      <div style={{ fontSize: 22, fontWeight: 800, color: Number(change) <= 0 ? "#6b8e6b" : "#d48a7b" }}>
-                        {Number(change) > 0 ? "+" : ""}{change} <span style={{ fontSize: 12, fontWeight: 600, color: "var(--muted)" }}>lb</span>
-                      </div>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: "var(--muted)" }}>30-Day Change</div>
-                    </div>
-                  )}
-                  {avg7 && (
-                    <div>
-                      <div style={{ fontSize: 22, fontWeight: 800, color: "var(--text)" }}>{avg7} <span style={{ fontSize: 12, fontWeight: 600, color: "var(--muted)" }}>lb</span></div>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: "var(--muted)" }}>7-Day Avg</div>
-                    </div>
-                  )}
-                  <div>
-                    <div style={{ fontSize: 22, fontWeight: 800, color: "var(--text)" }}>{entries.length}</div>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: "var(--muted)" }}>Weigh-ins</div>
-                  </div>
-                </div>
-              </Card>
-            )}
           </>
         );
       })()}

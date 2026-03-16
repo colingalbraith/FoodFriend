@@ -16,7 +16,7 @@ export const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export const TABS = [
   { id: "fridge", label: "Fridge" },
-  { id: "meals", label: "Meals" },
+  { id: "meals", label: "Nutrition" },
   { id: "shopping", label: "Shop" },
   { id: "gym", label: "Gym" },
   { id: "settings", label: "Settings" },

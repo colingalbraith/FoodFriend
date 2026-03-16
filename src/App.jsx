@@ -191,9 +191,9 @@ export default function FridgeFriend() {
         {/* Tab content */}
         <main className="app-main">
           {tab === "fridge" && <FridgeTab items={items} saveItems={saveItems} lowStockItems={lowStockItems} saveLowStock={saveLowStock} staples={staples} saveStaples={saveStaples} shopping={shopping} saveShopping={saveShopping} />}
-          {tab === "meals" && <MealPlanTab meals={meals} saveMeals={saveMeals} items={items} recurring={recurring} saveRecurring={saveRecurring} recipes={allRecipes} saveRecipes={saveUserRecipes} macroLog={macroLog} saveMacroLog={saveMacroLog} macroGoals={macroGoals} saveMacroGoals={saveMacroGoals} bodyWeight={bodyWeight} saveBodyWeight={saveBodyWeight} userProfile={userProfile} shopping={shopping} saveShopping={saveShopping} />}
+          {tab === "meals" && <MealPlanTab meals={meals} saveMeals={saveMeals} items={items} recurring={recurring} saveRecurring={saveRecurring} recipes={allRecipes} saveRecipes={saveUserRecipes} macroLog={macroLog} saveMacroLog={saveMacroLog} macroGoals={macroGoals} saveMacroGoals={saveMacroGoals} userProfile={userProfile} shopping={shopping} saveShopping={saveShopping} />}
           {tab === "shopping" && <ShoppingTab list={shopping} saveList={saveShopping} items={items} />}
-          {tab === "gym" && <GymTab gymLog={gymLog} saveGymLog={saveGymLog} />}
+          {tab === "gym" && <GymTab gymLog={gymLog} saveGymLog={saveGymLog} bodyWeight={bodyWeight} saveBodyWeight={saveBodyWeight} />}
           {tab === "settings" && <SettingsTab userProfile={userProfile} saveUserProfile={saveUserProfile} macroGoals={macroGoals} saveMacroGoals={saveMacroGoals} />}
         </main>
       </div>

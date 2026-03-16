@@ -12,9 +12,11 @@ import ManualAddForm from "./ManualAddForm";
 import BarcodeScanPanel from "./BarcodeScanPanel";
 import ReceiptScanPanel from "./ReceiptScanPanel";
 import FridgeView from "./FridgeView";
+import PantryView from "./PantryView";
 
 export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStock, staples, saveStaples, shopping, saveShopping }) {
   const [addMode, setAddMode] = useState(null);
+  const [view, setView] = useState("fridge"); // "fridge" | "pantry"
   const [filter, setFilter] = useState("All");
   const [swipedId, setSwipedId] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
@@ -82,8 +84,14 @@ export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStoc
 
   return (
     <div style={{ animation: "fadeIn 0.3s ease-out" }}>
-      {/* Fridge visualization */}
-      <FridgeView items={items} />
+      {/* View toggle */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 14, justifyContent: "center" }}>
+        <button className={`filter-chip ${view === "fridge" ? "active" : ""}`} onClick={() => setView("fridge")}>Fridge</button>
+        <button className={`filter-chip ${view === "pantry" ? "active" : ""}`} onClick={() => setView("pantry")}>Pantry</button>
+      </div>
+
+      {view === "fridge" && <FridgeView items={items} />}
+      {view === "pantry" && <PantryView staples={staples} />}
 
       {/* Add buttons */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8, marginBottom: 14 }}>
