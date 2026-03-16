@@ -39,23 +39,26 @@ export default function FridgeFriend() {
   const [shopping, setShopping] = useState([]);
   const [lowStockItems, setLowStockItems] = useState([]);
   const [staples, setStaples] = useState(null);
+  const [recipes, setRecipes] = useState([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
-        const [a, b, c, d, e] = await Promise.all([
+        const [a, b, c, d, e, f] = await Promise.all([
           window.storage.get(STORAGE_KEYS.items).catch(() => null),
           window.storage.get(STORAGE_KEYS.meals).catch(() => null),
           window.storage.get(STORAGE_KEYS.shopping).catch(() => null),
           window.storage.get(STORAGE_KEYS.lowStock).catch(() => null),
           window.storage.get(STORAGE_KEYS.staples).catch(() => null),
+          window.storage.get(STORAGE_KEYS.recipes).catch(() => null),
         ]);
         if (a?.value) setItems(JSON.parse(a.value));
         if (b?.value) setMeals(JSON.parse(b.value));
         if (c?.value) setShopping(JSON.parse(c.value));
         if (d?.value) setLowStockItems(JSON.parse(d.value));
         if (e?.value) setStaples(JSON.parse(e.value));
+        if (f?.value) setRecipes(JSON.parse(f.value));
       } catch (e) { console.error(e); }
       setLoaded(true);
     })();
@@ -71,6 +74,7 @@ export default function FridgeFriend() {
   const saveShopping = save(STORAGE_KEYS.shopping, setShopping);
   const saveLowStock = save(STORAGE_KEYS.lowStock, setLowStockItems);
   const saveStaples = save(STORAGE_KEYS.staples, setStaples);
+  const saveRecipes = save(STORAGE_KEYS.recipes, setRecipes);
 
   const expiringSoon = items.filter(i => { const d = daysUntil(i.expiry); return d >= 0 && d <= 3; }).length;
   const expired = items.filter(i => daysUntil(i.expiry) < 0).length;
@@ -142,7 +146,7 @@ export default function FridgeFriend() {
           {tab === "fridge" && <FridgeTab items={items} saveItems={saveItems} lowStockItems={lowStockItems} saveLowStock={saveLowStock} staples={staples} saveStaples={saveStaples} />}
           {tab === "meals" && <MealPlanTab meals={meals} saveMeals={saveMeals} items={items} />}
           {tab === "shopping" && <ShoppingTab list={shopping} saveList={saveShopping} items={items} />}
-          {tab === "chef" && <ChefTab items={items} saveMeals={saveMeals} meals={meals} />}
+          {tab === "chef" && <ChefTab items={items} saveMeals={saveMeals} meals={meals} recipes={recipes} saveRecipes={saveRecipes} />}
         </main>
       </div>
 

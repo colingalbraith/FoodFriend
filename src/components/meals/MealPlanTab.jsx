@@ -17,7 +17,7 @@ export default function MealPlanTab({ meals, saveMeals, items }) {
   const [mealInput, setMealInput] = useState("");
   const inputRef = useRef(null);
 
-  const planned = Object.values(meals).filter(Boolean).length;
+  const planned = weekDates.flatMap(d => MEAL_TYPES.map(mt => `${d}-${mt.id}`)).filter(k => meals[k]).length;
 
   function openEdit(date, type) {
     const key = `${date}-${type}`;
@@ -51,11 +51,7 @@ export default function MealPlanTab({ meals, saveMeals, items }) {
     }
   }, [editing]);
 
-  // Sort: today first, then remaining days in order
-  const todayIdx = weekDates.indexOf(today);
-  const sortedDates = todayIdx >= 0
-    ? [weekDates[todayIdx], ...weekDates.slice(todayIdx + 1), ...weekDates.slice(0, todayIdx)]
-    : weekDates;
+  const sortedDates = weekDates;
 
   return (
     <div style={{ animation: "fadeIn 0.3s ease-out" }}>
@@ -108,29 +104,29 @@ export default function MealPlanTab({ meals, saveMeals, items }) {
                   key={meal.key}
                   onClick={() => openEdit(date, meal.id)}
                   style={{
-                    display: "flex", alignItems: "center", gap: 12,
                     padding: "14px 16px",
                     borderTop: "1px solid #f0e6d6",
                     cursor: "pointer",
-                    minHeight: 52,
+                    minHeight: 56,
                     transition: "background 0.15s",
                     WebkitTapHighlightColor: "transparent",
                   }}
                 >
-                  <span style={{
-                    fontSize: 11, fontWeight: 700, color: "var(--muted)",
-                    width: 56, flexShrink: 0, textTransform: "uppercase", letterSpacing: 0.3,
+                  <div style={{
+                    fontSize: 10, fontWeight: 800, color: "var(--muted)",
+                    textTransform: "uppercase", letterSpacing: 0.5,
+                    marginBottom: 4,
                   }}>
                     {meal.label}
-                  </span>
+                  </div>
                   {meal.value ? (
-                    <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: "var(--text)" }}>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: "var(--text)" }}>
                       {meal.value}
-                    </span>
+                    </div>
                   ) : (
-                    <span style={{ flex: 1, fontSize: 13, color: "#ccc", fontWeight: 600 }}>
+                    <div style={{ fontSize: 14, color: "#ccc", fontWeight: 600 }}>
                       Tap to plan...
-                    </span>
+                    </div>
                   )}
                 </div>
               ))}

@@ -16,12 +16,10 @@ export function expiryBadge(days) {
 
 export function getWeekDates() {
   const t = new Date();
-  const dow = t.getDay();
-  const mon = new Date(t);
-  mon.setDate(t.getDate() - ((dow + 6) % 7));
+  t.setHours(0, 0, 0, 0);
   return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(mon);
-    d.setDate(mon.getDate() + i);
+    const d = new Date(t);
+    d.setDate(t.getDate() + i);
     return d.toISOString().split("T")[0];
   });
 }

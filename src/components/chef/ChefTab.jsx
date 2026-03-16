@@ -1,141 +1,199 @@
 import { useState } from "react";
 import { daysUntil } from "../../utils/dateHelpers";
+import { makeId } from "../../utils/itemHelpers";
 import Card from "../ui/Card";
 import EmptyState from "../ui/EmptyState";
+import Modal from "../ui/Modal";
 
-export default function ChefTab({ items, saveMeals, meals }) {
-  const [suggestions, setSuggestions] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [mode, setMode] = useState("quick");
+export default function ChefTab({ items, saveMeals, meals, recipes, saveRecipes }) {
+  const [addingRecipe, setAddingRecipe] = useState(false);
+  const [editingRecipe, setEditingRecipe] = useState(null);
+  const [recipeName, setRecipeName] = useState("");
+  const [recipeIngredients, setRecipeIngredients] = useState("");
+  const [recipeNotes, setRecipeNotes] = useState("");
+  const [recipeCalories, setRecipeCalories] = useState("");
+  const [recipeProtein, setRecipeProtein] = useState("");
+  const [recipeTime, setRecipeTime] = useState("");
 
-  const expiring = items.filter(i => { const d = daysUntil(i.expiry); return d >= 0 && d <= 5; })
-    .sort((a, b) => daysUntil(a.expiry) - daysUntil(b.expiry));
+  const fridgeNames = new Set(items.map(i => i.name.toLowerCase()));
 
-  async function getSuggestions() {
-    setLoading(true); setError(null); setSuggestions(null);
-    const list = items.map(i => {
-      const d = daysUntil(i.expiry);
-      const u = d <= 2 ? " (USE NOW!)" : d <= 5 ? " (soon)" : "";
-      return `${i.name} (${i.category})${u}`;
-    }).join(", ");
+  function openAddRecipe() {
+    setRecipeName(""); setRecipeIngredients(""); setRecipeNotes("");
+    setRecipeCalories(""); setRecipeProtein(""); setRecipeTime("");
+    setEditingRecipe(null);
+    setAddingRecipe(true);
+  }
 
-    const prompt = mode === "quick"
-      ? `My fridge: ${list}\n\nSuggest 3 meals prioritizing expiring items. Return ONLY JSON array: [{name, description, ingredients: [], time, difficulty}]`
-      : `My fridge: ${list}\n\n3-day meal plan prioritizing expiring items. ONLY JSON array: [{day, breakfast: {name, ingredients: []}, lunch: {name, ingredients: []}, dinner: {name, ingredients: []}}]`;
+  function openEditRecipe(r) {
+    setRecipeName(r.name);
+    setRecipeIngredients(r.ingredients.join(", "));
+    setRecipeNotes(r.notes || "");
+    setRecipeCalories(r.calories || "");
+    setRecipeProtein(r.protein || "");
+    setRecipeTime(r.time || "");
+    setEditingRecipe(r.id);
+    setAddingRecipe(true);
+  }
 
-    try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514", max_tokens: 1000,
-          system: "Helpful home cooking assistant. ONLY valid JSON, no markdown/backticks.",
-          messages: [{ role: "user", content: prompt }],
-        }),
-      });
-      const data = await res.json();
-      const text = data.content?.map(i => i.text || "").join("") || "";
-      setSuggestions(JSON.parse(text.replace(/```json|```/g, "").trim()));
-    } catch { setError("Couldn't cook up ideas. Try again!"); }
-    setLoading(false);
+  function saveRecipe() {
+    if (!recipeName.trim()) return;
+    const ingredients = recipeIngredients.split(",").map(s => s.trim()).filter(Boolean);
+    const recipe = {
+      id: editingRecipe || makeId(),
+      name: recipeName.trim(),
+      ingredients,
+      notes: recipeNotes.trim(),
+      calories: recipeCalories.trim(),
+      protein: recipeProtein.trim(),
+      time: recipeTime.trim(),
+      createdAt: editingRecipe
+        ? recipes.find(r => r.id === editingRecipe)?.createdAt
+        : new Date().toISOString(),
+    };
+    if (editingRecipe) {
+      saveRecipes(recipes.map(r => r.id === editingRecipe ? recipe : r));
+    } else {
+      saveRecipes([recipe, ...recipes]);
+    }
+    setAddingRecipe(false);
+  }
+
+  function deleteRecipe(id) {
+    saveRecipes(recipes.filter(r => r.id !== id));
   }
 
   return (
     <div style={{ animation: "fadeIn 0.3s ease-out" }}>
-      <div style={{ fontFamily: "var(--display)", fontSize: 24, fontWeight: 700, marginBottom: 6 }}>AI Chef</div>
-      <p style={{ fontSize: 13, color: "var(--muted)", marginBottom: 16 }}>
-        Smart meal ideas based on what's in your fridge, prioritizing what expires soonest.
-      </p>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
+        <div style={{ fontFamily: "var(--display)", fontSize: 24, fontWeight: 700 }}>My Recipes</div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>{recipes.length} saved</div>
+      </div>
 
-      {items.length === 0 ? (
-        <Card><EmptyState title="Fridge is empty!" sub="Add items first, then I can help" /></Card>
+      <button className="cozy-btn primary full" onClick={openAddRecipe} style={{ marginBottom: 14 }}>
+        Add Recipe
+      </button>
+
+      {recipes.length === 0 ? (
+        <Card><EmptyState title="No recipes yet" sub="Save your favorite meals to track ingredients and nutrition" /></Card>
       ) : (
-        <>
-          {expiring.length > 0 && (
-            <Card style={{ marginBottom: 14, background: "linear-gradient(135deg,#fef3e2,#fde8c8)", border: "2px solid #f0c78a", padding: 14, animation: "fadeIn 0.3s ease-out" }}>
-              <div style={{ fontWeight: 700, fontSize: 12, color: "#8b6d30", marginBottom: 6 }}>Prioritizing:</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                {expiring.map(i => (
-                  <span key={i.id} style={{ background: "#fffdf8", border: "1px solid #e8d0a8", borderRadius: 8, padding: "3px 8px", fontSize: 11, fontWeight: 600 }}>
-                    {i.name} · {daysUntil(i.expiry)}d
-                  </span>
-                ))}
-              </div>
-            </Card>
-          )}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {recipes.map((r, i) => {
+            const haveCount = r.ingredients.filter(ing => fridgeNames.has(ing.toLowerCase())).length;
+            const total = r.ingredients.length;
+            const canMake = total > 0 && haveCount === total;
 
-          <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
-            <button className={`cozy-btn ${mode === "quick" ? "primary" : "secondary"}`} onClick={() => setMode("quick")}>Quick</button>
-            <button className={`cozy-btn ${mode === "plan" ? "primary" : "secondary"}`} onClick={() => setMode("plan")}>3-Day</button>
-            <button className="cozy-btn primary" onClick={getSuggestions} disabled={loading} style={{ marginLeft: "auto" }}>
-              {loading ? "Thinking..." : "Go"}
-            </button>
+            return (
+              <Card key={r.id} style={{ padding: 0, overflow: "hidden", animation: `fadeIn 0.3s ease-out ${i * 40}ms both` }}>
+                <div onClick={() => openEditRecipe(r)} style={{
+                  padding: 16, cursor: "pointer", WebkitTapHighlightColor: "transparent",
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                    <div style={{ fontFamily: "var(--display)", fontSize: 20, fontWeight: 700 }}>{r.name}</div>
+                    {r.time && <span style={{ fontSize: 11, color: "var(--muted)", fontWeight: 700, flexShrink: 0 }}>{r.time}</span>}
+                  </div>
+
+                  {(r.calories || r.protein) && (
+                    <div style={{ display: "flex", gap: 12, marginBottom: 8 }}>
+                      {r.calories && (
+                        <div>
+                          <span style={{ fontSize: 15, fontWeight: 800, color: "var(--text)" }}>{r.calories}</span>
+                          <span style={{ fontSize: 10, color: "var(--muted)", fontWeight: 600, marginLeft: 2 }}>cal</span>
+                        </div>
+                      )}
+                      {r.protein && (
+                        <div>
+                          <span style={{ fontSize: 15, fontWeight: 800, color: "var(--text)" }}>{r.protein}g</span>
+                          <span style={{ fontSize: 10, color: "var(--muted)", fontWeight: 600, marginLeft: 2 }}>protein</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {total > 0 && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 6 }}>
+                      {r.ingredients.map((ing, j) => {
+                        const have = fridgeNames.has(ing.toLowerCase());
+                        return (
+                          <span key={j} style={{
+                            borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 600,
+                            background: have ? "#edf5ed" : "#fef3e2",
+                            color: have ? "#4a7a4a" : "#8b6d30",
+                            border: `1px solid ${have ? "#b8d4b8" : "#e8d0a8"}`,
+                          }}>
+                            {ing}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {total > 0 && (
+                    <div style={{ fontSize: 11, fontWeight: 700, color: canMake ? "#4a7a4a" : "var(--muted)" }}>
+                      {canMake ? "Ready to cook — all ingredients in fridge" : `${haveCount}/${total} ingredients in fridge`}
+                    </div>
+                  )}
+
+                  {r.notes && (
+                    <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 6, lineHeight: 1.4 }}>{r.notes}</div>
+                  )}
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      <Modal open={addingRecipe} onClose={() => setAddingRecipe(false)} title={editingRecipe ? "Edit Recipe" : "Add Recipe"}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <input className="cozy-input" placeholder="Recipe name" value={recipeName}
+            onChange={e => setRecipeName(e.target.value)} />
+
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: 4 }}>
+              Ingredients (comma separated)
+            </label>
+            <textarea className="cozy-input" rows={3} placeholder="Chicken, Rice, Soy Sauce, Garlic..."
+              value={recipeIngredients} onChange={e => setRecipeIngredients(e.target.value)}
+              style={{ resize: "vertical", fontFamily: "var(--body)" }} />
           </div>
 
-          {loading && (
-            <Card style={{ textAlign: "center", padding: 40 }}>
-              <div className="loading-dots" style={{ marginBottom: 14 }}>
-                <span /><span /><span />
-              </div>
-              <div style={{ fontFamily: "var(--display)", fontSize: 20, color: "var(--muted)" }}>
-                Cooking up something good...
-              </div>
-            </Card>
-          )}
-
-          {error && <Card style={{ borderColor: "#e8a0a0", background: "#fef5f5" }}><p style={{ color: "#c0392b", fontSize: 13 }}>{error}</p></Card>}
-
-          {suggestions && mode === "quick" && Array.isArray(suggestions) && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {suggestions.map((s, i) => (
-                <Card key={i} style={{ animation: `slideUp 0.4s ease-out ${i * 80}ms both` }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontFamily: "var(--display)", fontSize: 20, fontWeight: 700 }}>{s.name}</div>
-                      <p style={{ fontSize: 12, color: "var(--muted)", margin: "4px 0 8px" }}>{s.description}</p>
-                      <div style={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
-                        {(s.ingredients || []).map((ing, j) => (
-                          <span key={j} style={{ background: "#edf5ed", color: "#4a7a4a", borderRadius: 6, padding: "2px 7px", fontSize: 10, fontWeight: 600 }}>{ing}</span>
-                        ))}
-                      </div>
-                    </div>
-                    <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
-                      <div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 700 }}>{s.time}</div>
-                      <div style={{ fontSize: 10, fontWeight: 700, marginTop: 3,
-                        color: s.difficulty === "Easy" ? "#6b8e6b" : s.difficulty === "Hard" ? "#c0392b" : "#b8860b"
-                      }}>{s.difficulty}</div>
-                    </div>
-                  </div>
-                </Card>
-              ))}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: 4 }}>Calories</label>
+              <input className="cozy-input" placeholder="450" value={recipeCalories}
+                onChange={e => setRecipeCalories(e.target.value)} inputMode="numeric" />
             </div>
-          )}
-
-          {suggestions && mode === "plan" && Array.isArray(suggestions) && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {suggestions.map((day, i) => (
-                <Card key={i} style={{ animation: `slideUp 0.4s ease-out ${i * 80}ms both` }}>
-                  <div style={{ fontFamily: "var(--display)", fontSize: 18, fontWeight: 700, marginBottom: 10 }}>Day {day.day}</div>
-                  {["breakfast", "lunch", "dinner"].map(mt => {
-                    const m = day[mt]; if (!m) return null;
-                    return (
-                      <div key={mt} style={{ marginBottom: 8, paddingLeft: 6 }}>
-                        <div style={{ fontSize: 11, fontWeight: 800, color: "var(--muted)" }}>{mt.charAt(0).toUpperCase() + mt.slice(1)}</div>
-                        <div style={{ fontSize: 13, fontWeight: 700 }}>{m.name}</div>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 3, marginTop: 2 }}>
-                          {(m.ingredients || []).map((ing, j) => (
-                            <span key={j} style={{ background: "#f0e6d6", borderRadius: 5, padding: "1px 5px", fontSize: 10, color: "var(--muted)", fontWeight: 600 }}>{ing}</span>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </Card>
-              ))}
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: 4 }}>Protein (g)</label>
+              <input className="cozy-input" placeholder="35" value={recipeProtein}
+                onChange={e => setRecipeProtein(e.target.value)} inputMode="numeric" />
             </div>
-          )}
-        </>
-      )}
+            <div>
+              <label style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: 4 }}>Time</label>
+              <input className="cozy-input" placeholder="30 min" value={recipeTime}
+                onChange={e => setRecipeTime(e.target.value)} />
+            </div>
+          </div>
+
+          <div>
+            <label style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", display: "block", marginBottom: 4 }}>Notes</label>
+            <textarea className="cozy-input" rows={2} placeholder="Tips, variations, links..."
+              value={recipeNotes} onChange={e => setRecipeNotes(e.target.value)}
+              style={{ resize: "vertical", fontFamily: "var(--body)" }} />
+          </div>
+
+          <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+            <button className="cozy-btn primary" style={{ flex: 1 }} onClick={saveRecipe}>
+              {editingRecipe ? "Update" : "Save Recipe"}
+            </button>
+            {editingRecipe && (
+              <button className="cozy-btn danger" onClick={() => { deleteRecipe(editingRecipe); setAddingRecipe(false); }}>
+                Delete
+              </button>
+            )}
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

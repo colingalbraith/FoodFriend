@@ -154,7 +154,8 @@ export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStoc
 }
 
 function StaplesSection({ staples, saveStaples }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
+  const [filter, setFilter] = useState("all"); // "all" | "stocked" | "needed"
   const stapleState = staples || Object.fromEntries(DEFAULT_STAPLES.map(s => [s, true]));
 
   function toggle(name) {
@@ -162,13 +163,24 @@ function StaplesSection({ staples, saveStaples }) {
   }
 
   const allNames = [...new Set([...DEFAULT_STAPLES, ...Object.keys(stapleState)])];
-  const displayList = allNames.map(name => ({
+  const allItems = allNames.map(name => ({
     name,
     inStock: stapleState[name] ?? true,
   }));
 
-  const inStockCount = displayList.filter(s => s.inStock).length;
-  const outCount = displayList.filter(s => !s.inStock).length;
+  const inStockCount = allItems.filter(s => s.inStock).length;
+  const outCount = allItems.filter(s => !s.inStock).length;
+
+  // Filter
+  const filtered = filter === "stocked" ? allItems.filter(s => s.inStock)
+    : filter === "needed" ? allItems.filter(s => !s.inStock)
+    : allItems;
+
+  const filters = [
+    { id: "all", label: `All (${allItems.length})` },
+    { id: "stocked", label: `Stocked (${inStockCount})` },
+    { id: "needed", label: `Need (${outCount})` },
+  ];
 
   return (
     <div style={{ marginTop: 20 }}>
@@ -177,7 +189,7 @@ function StaplesSection({ staples, saveStaples }) {
         style={{
           display: "flex", alignItems: "center", gap: 8, width: "100%",
           background: "none", border: "none", cursor: "pointer", padding: "4px 0",
-          fontFamily: "var(--body)",
+          fontFamily: "var(--body)", WebkitTapHighlightColor: "transparent",
         }}
       >
         <span style={{ fontWeight: 800, fontSize: 14, color: "var(--text)" }}>Pantry Staples</span>
@@ -193,15 +205,26 @@ function StaplesSection({ staples, saveStaples }) {
       </button>
 
       {!collapsed && (
-        <Card style={{ padding: 10, marginTop: 8, animation: "fadeIn 0.25s ease-out" }}>
+        <Card style={{ padding: 12, marginTop: 8, animation: "fadeIn 0.25s ease-out" }}>
+          {/* Filters */}
+          <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+            {filters.map(f => (
+              <button key={f.id} className={`filter-chip ${filter === f.id ? "active" : ""}`}
+                onClick={() => setFilter(f.id)} style={{ fontSize: 11, padding: "5px 10px", minHeight: 30 }}>
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Items */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {displayList.map((s, i) => (
+            {filtered.map((s, i) => (
               <button
                 key={s.name}
                 onClick={() => toggle(s.name)}
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 5,
-                  padding: "7px 12px", borderRadius: 10, border: "1.5px solid",
+                  padding: "8px 12px", borderRadius: 10, border: "1.5px solid",
                   borderColor: s.inStock ? "#b8d4b8" : "#e0cdb5",
                   background: s.inStock ? "#edf5ed" : "#fffdf8",
                   color: s.inStock ? "#4a7a4a" : "var(--muted)",
@@ -209,14 +232,20 @@ function StaplesSection({ staples, saveStaples }) {
                   cursor: "pointer", transition: "all 0.2s ease",
                   opacity: s.inStock ? 1 : 0.5,
                   textDecoration: s.inStock ? "none" : "line-through",
-                  animation: `popIn 0.25s ease-out ${i * 20}ms both`,
+                  WebkitTapHighlightColor: "transparent",
                 }}
               >
                 {s.inStock && <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#6b8e6b" }} />}
                 {s.name}
               </button>
             ))}
+            {filtered.length === 0 && (
+              <div style={{ width: "100%", textAlign: "center", padding: 16, fontSize: 13, color: "var(--muted)" }}>
+                {filter === "needed" ? "Everything is stocked!" : "No items"}
+              </div>
+            )}
           </div>
+
           <div style={{ textAlign: "center", marginTop: 10, fontSize: 10, color: "var(--muted)" }}>
             Tap to toggle in stock / out of stock
           </div>
