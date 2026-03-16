@@ -5,11 +5,12 @@ import { daysUntil } from "./utils/dateHelpers";
 import { globalStyles } from "./styles/global";
 import FridgeTab from "./components/fridge/FridgeTab";
 import MealPlanTab from "./components/meals/MealPlanTab";
-import ShoppingTab from "./components/shopping/ShoppingTab";
 import GymTab from "./components/gym/GymTab";
+import StatsTab from "./components/stats/StatsTab";
 import SettingsTab from "./components/settings/SettingsTab";
 import ErrorBoundary from "./components/ui/ErrorBoundary";
 import Toast from "./components/ui/Toast";
+import Onboarding from "./components/onboarding/Onboarding";
 
 const TAB_ICONS = {
   fridge: (active) => (
@@ -22,17 +23,17 @@ const TAB_ICONS = {
       <rect x="3" y="4" width="18" height="18" rx="2" /><line x1="3" y1="10" x2="21" y2="10" /><line x1="9" y1="4" x2="9" y2="10" /><line x1="15" y1="4" x2="15" y2="10" />
     </svg>
   ),
-  shopping: (active) => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? "var(--text)" : "var(--muted)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" /><rect x="9" y="3" width="6" height="4" rx="1" /><line x1="9" y1="12" x2="15" y2="12" /><line x1="9" y1="16" x2="13" y2="16" />
-    </svg>
-  ),
   gym: (active) => (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? "var(--text)" : "var(--muted)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M6.5 6.5a2 2 0 0 1 3 0V17.5a2 2 0 0 1-3 0zM14.5 6.5a2 2 0 0 1 3 0V17.5a2 2 0 0 1-3 0z" />
       <line x1="9.5" y1="12" x2="14.5" y2="12" />
       <line x1="2" y1="10" x2="6.5" y2="10" /><line x1="2" y1="14" x2="6.5" y2="14" />
       <line x1="17.5" y1="10" x2="22" y2="10" /><line x1="17.5" y1="14" x2="22" y2="14" />
+    </svg>
+  ),
+  stats: (active) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? "var(--text)" : "var(--muted)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
     </svg>
   ),
   settings: (active) => (
@@ -153,6 +154,19 @@ export default function FridgeFriend() {
     );
   }
 
+  // First-time user — show onboarding
+  if (!userProfile) {
+    return (
+      <>
+        <style>{globalStyles}</style>
+        <Onboarding onComplete={({ profile, macroGoals: goals }) => {
+          saveUserProfile(profile);
+          if (goals) saveMacroGoals(goals);
+        }} />
+      </>
+    );
+  }
+
   return (
     <ErrorBoundary>
     <div className="app-shell">
@@ -205,8 +219,8 @@ export default function FridgeFriend() {
         <main className="app-main">
           {tab === "fridge" && <FridgeTab items={items} saveItems={saveItems} lowStockItems={lowStockItems} saveLowStock={saveLowStock} staples={staples} saveStaples={saveStaples} shopping={shopping} saveShopping={saveShopping} showToast={showToast} />}
           {tab === "meals" && <MealPlanTab meals={meals} saveMeals={saveMeals} items={items} saveItems={saveItems} recurring={recurring} saveRecurring={saveRecurring} recipes={allRecipes} saveRecipes={saveUserRecipes} macroLog={macroLog} saveMacroLog={saveMacroLog} macroGoals={macroGoals} saveMacroGoals={saveMacroGoals} userProfile={userProfile} shopping={shopping} saveShopping={saveShopping} showToast={showToast} />}
-          {tab === "shopping" && <ShoppingTab list={shopping} saveList={saveShopping} items={items} />}
           {tab === "gym" && <GymTab gymLog={gymLog} saveGymLog={saveGymLog} bodyWeight={bodyWeight} saveBodyWeight={saveBodyWeight} workoutTemplates={workoutTemplates} saveWorkoutTemplates={saveWorkoutTemplates} />}
+          {tab === "stats" && <StatsTab macroLog={macroLog} macroGoals={macroGoals} gymLog={gymLog} bodyWeight={bodyWeight} />}
           {tab === "settings" && <SettingsTab userProfile={userProfile} saveUserProfile={saveUserProfile} macroGoals={macroGoals} saveMacroGoals={saveMacroGoals} bodyWeight={bodyWeight} showToast={showToast} />}
         </main>
       </div>

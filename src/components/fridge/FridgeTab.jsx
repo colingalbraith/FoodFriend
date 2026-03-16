@@ -132,24 +132,12 @@ export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStoc
 
   return (
     <div style={{ animation: "fadeIn 0.3s ease-out" }}>
-      {/* View toggle */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 10, justifyContent: "center" }}>
-        <button className={`filter-chip ${view === "fridge" ? "active" : ""}`} onClick={() => setView("fridge")}>Fridge</button>
-        <button className={`filter-chip ${view === "pantry" ? "active" : ""}`} onClick={() => setView("pantry")}>Pantry</button>
-      </div>
-
-      {/* Swipe indicator dots */}
-      <div style={{ display: "flex", gap: 6, justifyContent: "center", marginBottom: 12 }}>
-        <div style={{ width: 6, height: 6, borderRadius: 3, background: view === "fridge" ? "var(--accent)" : "#ddd", transition: "background 0.25s" }} />
-        <div style={{ width: 6, height: 6, borderRadius: 3, background: view === "pantry" ? "var(--accent)" : "#ddd", transition: "background 0.25s" }} />
-      </div>
-
       {/* Swipeable pane */}
       <div
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
-        style={{ overflow: "hidden", marginBottom: 14 }}
+        style={{ overflow: "hidden" }}
       >
         <div style={{
           display: "flex",
@@ -165,6 +153,12 @@ export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStoc
             <PantryView staples={staples} />
           </div>
         </div>
+      </div>
+
+      {/* Swipe indicator dots */}
+      <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 10, marginBottom: 14 }}>
+        <div style={{ width: 6, height: 6, borderRadius: 3, background: view === "fridge" ? "var(--accent)" : "#ddd", transition: "background 0.25s" }} />
+        <div style={{ width: 6, height: 6, borderRadius: 3, background: view === "pantry" ? "var(--accent)" : "#ddd", transition: "background 0.25s" }} />
       </div>
 
       {/* Add buttons */}

@@ -15,9 +15,9 @@ export const CATEGORIES = Object.keys(CATEGORY_EMOJI);
 export const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export const TABS = [
-  { id: "fridge", label: "Fridge" },
+  { id: "fridge", label: "Food" },
   { id: "meals", label: "Nutrition" },
-  { id: "shopping", label: "Shop" },
   { id: "gym", label: "Gym" },
+  { id: "stats", label: "Stats" },
   { id: "settings", label: "Settings" },
 ];
