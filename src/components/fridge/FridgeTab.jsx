@@ -1,6 +1,9 @@
 import { useState, useRef, useCallback } from "react";
+import { CATEGORIES, CATEGORY_COLORS } from "../../constants/categories";
 import { DEFAULT_STAPLES } from "../../constants/storage";
+import { daysUntil, expiryBadge } from "../../utils/dateHelpers";
 import { autoExpiry, makeId } from "../../utils/itemHelpers";
+import Badge from "../ui/Badge";
 import Modal from "../ui/Modal";
 import QuickAddPanel from "./QuickAddPanel";
 import ManualAddForm from "./ManualAddForm";
@@ -18,6 +21,7 @@ export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStoc
   const [dragX, setDragX] = useState(0);
   const [dragging, setDragging] = useState(false);
   const touchRef = useRef({ startX: 0, startY: 0, locked: null });
+  const [selectedItem, setSelectedItem] = useState(null);
 
   const view = VIEWS[viewIdx];
 
@@ -34,7 +38,6 @@ export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStoc
     }
     if (touchRef.current.locked !== "h") return;
     e.preventDefault();
-    // Rubber-band at edges
     let clamped = dx;
     if (viewIdx === 0 && dx > 0) clamped = dx * 0.3;
     if (viewIdx === VIEWS.length - 1 && dx < 0) clamped = dx * 0.3;
@@ -62,21 +65,41 @@ export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStoc
     if (lowStockItems.includes(obj.name)) saveLowStock(lowStockItems.filter(n => n !== obj.name));
   }
 
+  function useUpItem(item) {
+    const prevItems = items;
+    const prevLow = lowStockItems;
+    if (!lowStockItems.includes(item.name)) saveLowStock([...lowStockItems, item.name]);
+    saveItems(items.filter(i => i.id !== item.id));
+    setSelectedItem(null);
+    showToast?.(`Marked "${item.name}" as used`, () => { saveItems(prevItems); saveLowStock(prevLow); });
+  }
+
+  function tossItem(item) {
+    const prevItems = items;
+    saveItems(items.filter(i => i.id !== item.id));
+    setSelectedItem(null);
+    showToast?.(`Tossed "${item.name}"`, () => { saveItems(prevItems); });
+  }
+
   const paneCount = VIEWS.length;
   const offset = -(viewIdx * (100 / paneCount));
 
   return (
-    <div style={{ animation: "fadeIn 0.3s ease-out" }}>
+    <div style={{ animation: "fadeIn 0.3s ease-out", display: "flex", flexDirection: "column", minHeight: "calc(100vh - 140px)" }}>
       {/* Swipeable pane */}
-      <div onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd} style={{ overflow: "hidden" }}>
+      <div onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd} style={{ overflow: "hidden", flex: view === "overview" ? 1 : "none" }}>
         <div style={{
           display: "flex", width: `${paneCount * 100}%`,
           transform: `translateX(calc(${offset}% + ${dragX}px))`,
           transition: dragging ? "none" : "transform 0.3s cubic-bezier(0.32, 0.72, 0, 1)",
           willChange: "transform",
         }}>
-          <div style={{ width: `${100 / paneCount}%`, flexShrink: 0 }}><FridgeView items={items} /></div>
-          <div style={{ width: `${100 / paneCount}%`, flexShrink: 0 }}><PantryView staples={staples} /></div>
+          <div style={{ width: `${100 / paneCount}%`, flexShrink: 0 }}>
+            <FridgeView items={items} onItemTap={setSelectedItem} />
+          </div>
+          <div style={{ width: `${100 / paneCount}%`, flexShrink: 0 }}>
+            <PantryView staples={staples} />
+          </div>
           <div style={{ width: `${100 / paneCount}%`, flexShrink: 0, padding: "0 4px" }}>
             <OverviewTab items={items} saveItems={saveItems} lowStockItems={lowStockItems} saveLowStock={saveLowStock}
               staples={staples} saveStaples={saveStaples} shopping={shopping} saveShopping={saveShopping} showToast={showToast} />
@@ -85,7 +108,7 @@ export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStoc
       </div>
 
       {/* Swipe indicator dots */}
-      <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 6, marginBottom: 10 }}>
+      <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 6, marginBottom: 8 }}>
         {VIEWS.map((v, i) => (
           <div key={v} onClick={() => setViewIdx(i)} style={{
             width: 6, height: 6, borderRadius: 3, cursor: "pointer",
@@ -95,9 +118,12 @@ export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStoc
         ))}
       </div>
 
-      {/* Add buttons — only on fridge/pantry views */}
+      {/* Spacer pushes buttons to bottom */}
+      {view !== "overview" && <div style={{ flex: 1 }} />}
+
+      {/* Add buttons — pinned to bottom on fridge/pantry */}
       {view !== "overview" && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8, marginBottom: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8, paddingBottom: 8 }}>
           {[
             { id: "quick", label: "Quick Add" },
             { id: "manual", label: "Manual" },
@@ -124,6 +150,74 @@ export default function FridgeTab({ items, saveItems, lowStockItems, saveLowStoc
       </Modal>
       <Modal open={addMode === "receipt"} onClose={() => setAddMode(null)} title="Scan Receipt">
         <ReceiptScanPanel onAdd={(list) => { list.forEach(obj => addItemObj(obj)); }} onClose={() => setAddMode(null)} />
+      </Modal>
+
+      {/* Item detail popup */}
+      <Modal open={!!selectedItem} onClose={() => setSelectedItem(null)} title={selectedItem?.name || ""}>
+        {selectedItem && (() => {
+          const days = daysUntil(selectedItem.expiry);
+          const label = expiryBadge(days);
+          return (
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+                <div className="cat-dot" style={{ background: CATEGORY_COLORS[selectedItem.category] || "#b0a090", width: 14, height: 14 }} />
+                <div>
+                  <div style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600 }}>{selectedItem.category}</div>
+                  {selectedItem.qty && selectedItem.qty !== "1" && <div style={{ fontSize: 11, color: "var(--muted)" }}>Qty: {selectedItem.qty}</div>}
+                </div>
+                <div style={{ marginLeft: "auto" }}><Badge label={label} /></div>
+              </div>
+
+              {/* Dates */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
+                {selectedItem.addedAt && (
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "var(--muted)", marginBottom: 2 }}>ADDED</div>
+                    <div style={{ fontSize: 14, fontWeight: 700 }}>{new Date(selectedItem.addedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</div>
+                  </div>
+                )}
+                {selectedItem.expiry && (
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "var(--muted)", marginBottom: 2 }}>EXPIRES</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: days < 0 ? "#c0392b" : days <= 3 ? "#e67e22" : "var(--text)" }}>
+                      {new Date(selectedItem.expiry).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                      <span style={{ fontSize: 11, color: "var(--muted)", marginLeft: 4 }}>({days < 0 ? `${Math.abs(days)}d ago` : `${days}d`})</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Nutrition if available */}
+              {selectedItem.nutrition && (
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: "var(--muted)", marginBottom: 6 }}>NUTRITION</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8, textAlign: "center" }}>
+                    {[
+                      { label: "Cal", val: selectedItem.nutrition.calories },
+                      { label: "Protein", val: selectedItem.nutrition.protein ? `${selectedItem.nutrition.protein}g` : "-" },
+                      { label: "Carbs", val: selectedItem.nutrition.carbs ? `${selectedItem.nutrition.carbs}g` : "-" },
+                      { label: "Fat", val: selectedItem.nutrition.fat ? `${selectedItem.nutrition.fat}g` : "-" },
+                    ].map(n => (
+                      <div key={n.label}>
+                        <div style={{ fontSize: 16, fontWeight: 800 }}>{n.val || "-"}</div>
+                        <div style={{ fontSize: 9, fontWeight: 700, color: "var(--muted)" }}>{n.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                  {selectedItem.nutrition.serving && (
+                    <div style={{ fontSize: 10, color: "var(--muted)", textAlign: "center", marginTop: 4 }}>per {selectedItem.nutrition.serving}</div>
+                  )}
+                </div>
+              )}
+
+              {/* Actions */}
+              <div style={{ display: "flex", gap: 8 }}>
+                <button className="cozy-btn primary" style={{ flex: 1, justifyContent: "center" }} onClick={() => useUpItem(selectedItem)}>Used</button>
+                <button className="cozy-btn danger" style={{ flex: 1, justifyContent: "center" }} onClick={() => tossItem(selectedItem)}>Toss</button>
+              </div>
+            </div>
+          );
+        })()}
       </Modal>
     </div>
   );
