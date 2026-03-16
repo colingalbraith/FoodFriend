@@ -8,6 +8,7 @@ import MealPlanTab from "./components/meals/MealPlanTab";
 import ShoppingTab from "./components/shopping/ShoppingTab";
 import ChefTab from "./components/chef/ChefTab";
 import GymTab from "./components/gym/GymTab";
+import SettingsTab from "./components/settings/SettingsTab";
 
 const TAB_ICONS = {
   fridge: (active) => (
@@ -39,6 +40,11 @@ const TAB_ICONS = {
       <line x1="17.5" y1="10" x2="22" y2="10" /><line x1="17.5" y1="14" x2="22" y2="14" />
     </svg>
   ),
+  settings: (active) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? "var(--text)" : "var(--muted)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
+  ),
 };
 
 export default function FridgeFriend() {
@@ -54,6 +60,7 @@ export default function FridgeFriend() {
   const [macroGoals, setMacroGoals] = useState(null);
   const [gymLog, setGymLog] = useState([]);
   const [bodyWeight, setBodyWeight] = useState([]);
+  const [userProfile, setUserProfile] = useState(null);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -89,6 +96,8 @@ export default function FridgeFriend() {
         if (j?.value) setGymLog(JSON.parse(j.value));
         const k = await window.storage.get(STORAGE_KEYS.bodyWeight).catch(() => null);
         if (k?.value) setBodyWeight(JSON.parse(k.value));
+        const l = await window.storage.get(STORAGE_KEYS.userProfile).catch(() => null);
+        if (l?.value) setUserProfile(JSON.parse(l.value));
       } catch (e) { console.error(e); }
       setLoaded(true);
     })();
@@ -110,6 +119,7 @@ export default function FridgeFriend() {
   const saveMacroGoals = save(STORAGE_KEYS.macroGoals, setMacroGoals);
   const saveGymLog = save(STORAGE_KEYS.gymLog, setGymLog);
   const saveBodyWeight = save(STORAGE_KEYS.bodyWeight, setBodyWeight);
+  const saveUserProfile = save(STORAGE_KEYS.userProfile, setUserProfile);
 
   const expiringSoon = items.filter(i => { const d = daysUntil(i.expiry); return d >= 0 && d <= 3; }).length;
   const expired = items.filter(i => daysUntil(i.expiry) < 0).length;
@@ -179,10 +189,11 @@ export default function FridgeFriend() {
         {/* Tab content */}
         <main className="app-main">
           {tab === "fridge" && <FridgeTab items={items} saveItems={saveItems} lowStockItems={lowStockItems} saveLowStock={saveLowStock} staples={staples} saveStaples={saveStaples} shopping={shopping} saveShopping={saveShopping} />}
-          {tab === "meals" && <MealPlanTab meals={meals} saveMeals={saveMeals} items={items} recurring={recurring} saveRecurring={saveRecurring} recipes={recipes} macroLog={macroLog} saveMacroLog={saveMacroLog} macroGoals={macroGoals} saveMacroGoals={saveMacroGoals} bodyWeight={bodyWeight} saveBodyWeight={saveBodyWeight} />}
+          {tab === "meals" && <MealPlanTab meals={meals} saveMeals={saveMeals} items={items} recurring={recurring} saveRecurring={saveRecurring} recipes={recipes} macroLog={macroLog} saveMacroLog={saveMacroLog} macroGoals={macroGoals} saveMacroGoals={saveMacroGoals} bodyWeight={bodyWeight} saveBodyWeight={saveBodyWeight} userProfile={userProfile} />}
           {tab === "shopping" && <ShoppingTab list={shopping} saveList={saveShopping} items={items} />}
           {tab === "chef" && <ChefTab items={items} saveMeals={saveMeals} meals={meals} recipes={recipes} saveRecipes={saveRecipes} shopping={shopping} saveShopping={saveShopping} />}
           {tab === "gym" && <GymTab gymLog={gymLog} saveGymLog={saveGymLog} />}
+          {tab === "settings" && <SettingsTab userProfile={userProfile} saveUserProfile={saveUserProfile} macroGoals={macroGoals} saveMacroGoals={saveMacroGoals} />}
         </main>
       </div>
 

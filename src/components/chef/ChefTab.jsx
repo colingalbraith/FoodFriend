@@ -14,6 +14,7 @@ export default function ChefTab({ items, saveMeals, meals, recipes, saveRecipes,
   const [recipeCalories, setRecipeCalories] = useState("");
   const [recipeProtein, setRecipeProtein] = useState("");
   const [recipeTime, setRecipeTime] = useState("");
+  const [search, setSearch] = useState("");
 
   const fridgeNames = new Set(items.map(i => i.name.toLowerCase()));
 
@@ -69,6 +70,8 @@ export default function ChefTab({ items, saveMeals, meals, recipes, saveRecipes,
         <div style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>{recipes.length} saved</div>
       </div>
 
+      <input className="cozy-input" placeholder="Search recipes..." value={search} onChange={e => setSearch(e.target.value)} style={{ marginBottom: 10 }} />
+
       <button className="cozy-btn primary full" onClick={openAddRecipe} style={{ marginBottom: 14 }}>
         Add Recipe
       </button>
@@ -77,7 +80,7 @@ export default function ChefTab({ items, saveMeals, meals, recipes, saveRecipes,
         <Card><EmptyState title="No recipes yet" sub="Save your favorite meals to track ingredients and nutrition" /></Card>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {recipes.map((r, i) => {
+          {recipes.filter(r => !search || r.name.toLowerCase().includes(search.toLowerCase())).map((r, i) => {
             const haveCount = r.ingredients.filter(ing => fridgeNames.has(ing.toLowerCase())).length;
             const total = r.ingredients.length;
             const canMake = total > 0 && haveCount === total;

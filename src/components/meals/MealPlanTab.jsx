@@ -22,7 +22,7 @@ function todayKey() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-export default function MealPlanTab({ meals, saveMeals, items, recurring, saveRecurring, recipes, macroLog, saveMacroLog, macroGoals, saveMacroGoals, bodyWeight, saveBodyWeight }) {
+export default function MealPlanTab({ meals, saveMeals, items, recurring, saveRecurring, recipes, macroLog, saveMacroLog, macroGoals, saveMacroGoals, bodyWeight, saveBodyWeight, userProfile }) {
   const weekDates = getWeekDates();
   const today = weekDates[0];
   const [section, setSection] = useState("plan"); // "plan" | "track" | "stats" | "weight"
@@ -215,6 +215,27 @@ export default function MealPlanTab({ meals, saveMeals, items, recurring, saveRe
       {/* ─── PLAN SECTION ─── */}
       {section === "plan" && (
         <>
+          {/* Today's calorie summary */}
+          {todayEntries.length > 0 && (
+            <Card style={{ padding: 14, marginBottom: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>
+                  {todayTotals.calories} <span style={{ fontSize: 11, color: "var(--muted)", fontWeight: 600 }}>/ {goals.calories} cal today</span>
+                </span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)" }}>{todayTotals.protein}g protein</span>
+              </div>
+              <div style={{ height: 6, borderRadius: 3, background: "#e8dcc8", overflow: "hidden" }}>
+                <div style={{
+                  height: "100%",
+                  borderRadius: 3,
+                  width: `${Math.min((todayTotals.calories / goals.calories) * 100, 100)}%`,
+                  background: todayTotals.calories > goals.calories ? "linear-gradient(90deg, #d48a7b, #c47a6b)" : "linear-gradient(90deg, #6b8e6b, #5a7a5a)",
+                  transition: "width 0.5s ease",
+                }} />
+              </div>
+            </Card>
+          )}
+
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
             <div style={{ fontFamily: "var(--display)", fontSize: 24, fontWeight: 700 }}>This Week</div>
             <div style={{ fontSize: 12, fontWeight: 700, color: "var(--muted)" }}>{planned}/21</div>
