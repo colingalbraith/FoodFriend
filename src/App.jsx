@@ -5,6 +5,7 @@ import { daysUntil } from "./utils/dateHelpers";
 import { globalStyles } from "./styles/global";
 import FridgeTab from "./components/fridge/FridgeTab";
 import MealPlanTab from "./components/meals/MealPlanTab";
+import OverviewTab from "./components/overview/OverviewTab";
 import GymTab from "./components/gym/GymTab";
 import StatsTab from "./components/stats/StatsTab";
 import SettingsTab from "./components/settings/SettingsTab";
@@ -19,6 +20,12 @@ const TAB_ICONS = {
       <rect x="4" y="2" width="16" height="20" rx="2" /><line x1="4" y1="10" x2="20" y2="10" /><line x1="15" y1="6" x2="15" y2="6.01" /><line x1="15" y1="14" x2="15" y2="14.01" />
     </svg>
   ),
+  overview: (active) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? "var(--text)" : "var(--muted)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" />
+      <line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" />
+    </svg>
+  ),
   meals: (active) => (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? "var(--text)" : "var(--muted)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <rect x="3" y="4" width="18" height="18" rx="2" /><line x1="3" y1="10" x2="21" y2="10" /><line x1="9" y1="4" x2="9" y2="10" /><line x1="15" y1="4" x2="15" y2="10" />
@@ -30,11 +37,6 @@ const TAB_ICONS = {
       <line x1="9.5" y1="12" x2="14.5" y2="12" />
       <line x1="2" y1="10" x2="6.5" y2="10" /><line x1="2" y1="14" x2="6.5" y2="14" />
       <line x1="17.5" y1="10" x2="22" y2="10" /><line x1="17.5" y1="14" x2="22" y2="14" />
-    </svg>
-  ),
-  stats: (active) => (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={active ? "var(--text)" : "var(--muted)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
     </svg>
   ),
   settings: (active) => (
@@ -231,9 +233,9 @@ export default function FridgeFriend() {
         {/* Tab content */}
         <main className="app-main">
           {tab === "fridge" && <FridgeTab items={items} saveItems={saveItems} lowStockItems={lowStockItems} saveLowStock={saveLowStock} staples={staples} saveStaples={saveStaples} shopping={shopping} saveShopping={saveShopping} showToast={showToast} />}
+          {tab === "overview" && <OverviewTab items={items} saveItems={saveItems} lowStockItems={lowStockItems} saveLowStock={saveLowStock} staples={staples} saveStaples={saveStaples} shopping={shopping} saveShopping={saveShopping} showToast={showToast} />}
           {tab === "meals" && <MealPlanTab meals={meals} saveMeals={saveMeals} items={items} saveItems={saveItems} recurring={recurring} saveRecurring={saveRecurring} recipes={allRecipes} saveRecipes={saveUserRecipes} macroLog={macroLog} saveMacroLog={saveMacroLog} macroGoals={macroGoals} saveMacroGoals={saveMacroGoals} userProfile={userProfile} shopping={shopping} saveShopping={saveShopping} showToast={showToast} />}
           {tab === "gym" && <GymTab gymLog={gymLog} saveGymLog={saveGymLog} bodyWeight={bodyWeight} saveBodyWeight={saveBodyWeight} workoutTemplates={workoutTemplates} saveWorkoutTemplates={saveWorkoutTemplates} />}
-          {tab === "stats" && <StatsTab macroLog={macroLog} macroGoals={macroGoals} gymLog={gymLog} bodyWeight={bodyWeight} />}
           {tab === "settings" && <SettingsTab userProfile={userProfile} saveUserProfile={saveUserProfile} macroGoals={macroGoals} saveMacroGoals={saveMacroGoals} bodyWeight={bodyWeight} showToast={showToast} />}
         </main>
       </div>
