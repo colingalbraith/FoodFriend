@@ -6,6 +6,7 @@ export const STORAGE_KEYS = {
   lowStock: "ff2-lowstock",
   staples: "ff2-staples",
   recipes: "ff2-recipes",
+  recurring: "ff2-recurring",
 };
 
 export const DEFAULT_STAPLES = [

@@ -51,12 +51,12 @@ export default function QuickAddPanel({ onAdd, onClose, existingItems }) {
 
   return (
     <div>
-      {/* Search */}
-      <div style={{ position: "relative", marginBottom: 14 }}>
+      {/* Search — fixed top */}
+      <div style={{ position: "relative", marginBottom: 10, flexShrink: 0 }}>
         <input
           ref={inputRef}
           className="cozy-input"
-          placeholder="Search 500+ foods... (e.g. chicken, yogurt, avocado)"
+          placeholder="Search 500+ foods..."
           value={query}
           onChange={e => handleInput(e.target.value)}
           style={{ paddingLeft: 36 }}
@@ -67,44 +67,43 @@ export default function QuickAddPanel({ onAdd, onClose, existingItems }) {
         )}
       </div>
 
-      {/* Recently added from fridge */}
-      {!query && recentNames.length > 0 && (
-        <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: "var(--muted)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>
-            Add again
+      {/* Scrollable results */}
+      <div style={{ maxHeight: "40vh", overflowY: "auto", WebkitOverflowScrolling: "touch" }}>
+        {/* Recently added from fridge */}
+        {!query && recentNames.length > 0 && (
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 11, fontWeight: 800, color: "var(--muted)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>
+              Add again
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+              {recentNames.map(name => {
+                const added = justAdded.includes(name);
+                return (
+                  <button key={`r-${name}`} className={`quick-chip ${added ? "added" : ""}`}
+                    disabled={added}
+                    onClick={() => {
+                      fetch(`/api/foods?q=${encodeURIComponent(name)}`)
+                        .then(r => r.json())
+                        .then(data => { if (data[0]) handleAdd(data[0]); })
+                        .catch(() => {});
+                    }}
+                  >
+                    {added ? "✓ " : ""}{name}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-            {recentNames.map(name => {
-              const added = justAdded.includes(name);
-              return (
-                <button key={`r-${name}`} className={`quick-chip ${added ? "added" : ""}`}
-                  disabled={added}
-                  onClick={() => {
-                    // Search and add the first match
-                    fetch(`/api/foods?q=${encodeURIComponent(name)}`)
-                      .then(r => r.json())
-                      .then(data => { if (data[0]) handleAdd(data[0]); })
-                      .catch(() => {});
-                  }}
-                >
-                  {added ? "✓ " : ""}{name}
-                </button>
-              );
-            })}
-          </div>
+        )}
+
+        {/* Section label */}
+        <div style={{ fontSize: 11, fontWeight: 800, color: "var(--muted)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>
+          {query.trim() ? `${results.length} result${results.length !== 1 ? "s" : ""}` : "Popular items"}
         </div>
-      )}
 
-      {/* Section label */}
-      <div style={{ fontSize: 11, fontWeight: 800, color: "var(--muted)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>
-        {query.trim() ? `${results.length} result${results.length !== 1 ? "s" : ""}` : "Popular items"}
-      </div>
-
-      {/* Results list */}
-      <div style={{ maxHeight: 340, overflowY: "auto", margin: "0 -4px", padding: "0 4px" }}>
+        {/* Results list */}
         {displayList.length === 0 && query.trim() && !loading && (
           <div style={{ textAlign: "center", padding: 24, color: "#b8a080" }}>
-            <div style={{ fontSize: 28, marginBottom: 6 }}>🤔</div>
             <div style={{ fontSize: 13, fontWeight: 600 }}>No matches for "{query}"</div>
             <div style={{ fontSize: 11, marginTop: 4, color: "var(--muted)" }}>Try a different spelling or shorter term</div>
           </div>
@@ -124,12 +123,7 @@ export default function QuickAddPanel({ onAdd, onClose, existingItems }) {
                 transition: "background 0.15s",
                 textAlign: "left", fontFamily: "var(--body)",
               }}
-              onMouseEnter={e => { if (!added) e.currentTarget.style.background = "rgba(228,213,183,0.25)"; }}
-              onMouseLeave={e => { if (!added) e.currentTarget.style.background = "transparent"; }}
             >
-              <span style={{ fontSize: 22, width: 32, textAlign: "center", flexShrink: 0 }}>
-                {CATEGORY_EMOJI[food.category] || "🛒"}
-              </span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontWeight: 700, fontSize: 14, color: added ? "#4a7a4a" : "var(--text)" }}>
                   {added && "✓ "}{food.name}
@@ -151,13 +145,15 @@ export default function QuickAddPanel({ onAdd, onClose, existingItems }) {
         })}
       </div>
 
-      {/* Added summary + done button */}
-      {justAdded.length > 0 && (
-        <div style={{ fontSize: 13, fontWeight: 700, color: "#6b8e6b", textAlign: "center", margin: "12px 0 4px" }}>
-          ✓ Added {justAdded.length} item{justAdded.length > 1 ? "s" : ""} with expiry dates & nutrition data
-        </div>
-      )}
-      <button className="cozy-btn primary full" style={{ marginTop: 10 }} onClick={onClose}>Done</button>
+      {/* Done button */}
+      <div style={{ paddingTop: 10 }}>
+        {justAdded.length > 0 && (
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#6b8e6b", textAlign: "center", marginBottom: 6 }}>
+            Added {justAdded.length} item{justAdded.length > 1 ? "s" : ""}
+          </div>
+        )}
+        <button className="cozy-btn primary full" onClick={onClose}>Done</button>
+      </div>
     </div>
   );
 }

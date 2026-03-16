@@ -40,18 +40,20 @@ export default function FridgeFriend() {
   const [lowStockItems, setLowStockItems] = useState([]);
   const [staples, setStaples] = useState(null);
   const [recipes, setRecipes] = useState([]);
+  const [recurring, setRecurring] = useState({});
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
-        const [a, b, c, d, e, f] = await Promise.all([
+        const [a, b, c, d, e, f, g] = await Promise.all([
           window.storage.get(STORAGE_KEYS.items).catch(() => null),
           window.storage.get(STORAGE_KEYS.meals).catch(() => null),
           window.storage.get(STORAGE_KEYS.shopping).catch(() => null),
           window.storage.get(STORAGE_KEYS.lowStock).catch(() => null),
           window.storage.get(STORAGE_KEYS.staples).catch(() => null),
           window.storage.get(STORAGE_KEYS.recipes).catch(() => null),
+          window.storage.get(STORAGE_KEYS.recurring).catch(() => null),
         ]);
         if (a?.value) setItems(JSON.parse(a.value));
         if (b?.value) setMeals(JSON.parse(b.value));
@@ -59,6 +61,7 @@ export default function FridgeFriend() {
         if (d?.value) setLowStockItems(JSON.parse(d.value));
         if (e?.value) setStaples(JSON.parse(e.value));
         if (f?.value) setRecipes(JSON.parse(f.value));
+        if (g?.value) setRecurring(JSON.parse(g.value));
       } catch (e) { console.error(e); }
       setLoaded(true);
     })();
@@ -75,6 +78,7 @@ export default function FridgeFriend() {
   const saveLowStock = save(STORAGE_KEYS.lowStock, setLowStockItems);
   const saveStaples = save(STORAGE_KEYS.staples, setStaples);
   const saveRecipes = save(STORAGE_KEYS.recipes, setRecipes);
+  const saveRecurring = save(STORAGE_KEYS.recurring, setRecurring);
 
   const expiringSoon = items.filter(i => { const d = daysUntil(i.expiry); return d >= 0 && d <= 3; }).length;
   const expired = items.filter(i => daysUntil(i.expiry) < 0).length;
@@ -105,7 +109,7 @@ export default function FridgeFriend() {
         <header className="app-header">
           <div>
             <h1 style={{ fontFamily: "var(--display)", fontSize: 28, fontWeight: 700, color: "var(--text)", margin: 0 }}>
-              Fridge Friend
+              Stockd
             </h1>
             <p style={{ fontSize: 12, color: "var(--muted)", fontWeight: 600, marginTop: 2 }}>
               {items.length} items{expiringSoon > 0 && ` · ${expiringSoon} expiring soon`}{expired > 0 && ` · ${expired} expired`}
@@ -144,7 +148,7 @@ export default function FridgeFriend() {
         {/* Tab content */}
         <main className="app-main">
           {tab === "fridge" && <FridgeTab items={items} saveItems={saveItems} lowStockItems={lowStockItems} saveLowStock={saveLowStock} staples={staples} saveStaples={saveStaples} />}
-          {tab === "meals" && <MealPlanTab meals={meals} saveMeals={saveMeals} items={items} />}
+          {tab === "meals" && <MealPlanTab meals={meals} saveMeals={saveMeals} items={items} recurring={recurring} saveRecurring={saveRecurring} />}
           {tab === "shopping" && <ShoppingTab list={shopping} saveList={saveShopping} items={items} />}
           {tab === "chef" && <ChefTab items={items} saveMeals={saveMeals} meals={meals} recipes={recipes} saveRecipes={saveRecipes} />}
         </main>

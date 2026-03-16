@@ -34,7 +34,7 @@ export default function ShoppingTab({ list, saveList }) {
 
       <Card style={{ padding: 6 }}>
         {list.length === 0 ? (
-          <EmptyState title="Nothing to buy yet!" sub="Add items or let AI Chef suggest a grocery run" />
+          <EmptyState title="Nothing to buy yet!" sub="Type an item above to get started" />
         ) : (
           <>
             {unchecked.map((item, idx) => (

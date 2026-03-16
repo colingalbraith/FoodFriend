@@ -48,9 +48,10 @@ export default function Modal({ open, onClose, title, children }) {
           }}>✕</button>
         </div>
 
-        {/* Scrollable content */}
+        {/* Content */}
         <div style={{
-          flex: 1, overflowY: "auto", WebkitOverflowScrolling: "touch",
+          flex: 1, minHeight: 0,
+          overflowY: "auto", WebkitOverflowScrolling: "touch",
           padding: 18,
         }}>
           {children}

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fridge-friend-v2';
+const CACHE_NAME = 'stockd-v1';
 const STATIC_ASSETS = [
   '/',
   '/index.html',

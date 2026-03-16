@@ -1,6 +1,6 @@
 {
-  "name": "Fridge Friend",
-  "short_name": "Fridge",
+  "name": "Stockd",
+  "short_name": "Stockd",
   "description": "Smart kitchen companion — track food, plan meals, reduce waste",
   "start_url": "/",
   "display": "standalone",
