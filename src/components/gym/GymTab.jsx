@@ -472,7 +472,7 @@ function BodyPicker({ selected, onToggle }) {
         <ellipse cx="172" cy="328" rx="14" ry="6" fill="#c8b8a0" opacity="0.35" />
       </svg>
 
-      {/* Labels — rendered as SVG text for precise centering */}
+      {/* Labels */}
       <svg viewBox="0 0 220 340" width="220" height="340" style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none" }}>
         {[
           { g: "Shoulders", x: 110, y: 80 },

@@ -192,7 +192,7 @@ export default function MealPlanTab({
     <div style={{ animation: "fadeIn 0.3s ease-out" }}>
       {/* Section toggle */}
       <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
-        {[{ id: "plan", label: "Plan" }, { id: "recipes", label: "Recipes" }, { id: "shop", label: "Shop" }].map(s => (
+        {[{ id: "plan", label: "Plan" }, { id: "recipes", label: "Cook" }, { id: "shop", label: "Shop" }].map(s => (
           <button key={s.id} className={`filter-chip ${section === s.id ? "active" : ""}`} onClick={() => setSection(s.id)}>
             {s.label}{s.id === "shop" && shopUnchecked.length > 0 ? ` (${shopUnchecked.length})` : ""}
           </button>

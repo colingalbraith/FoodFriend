@@ -34,8 +34,6 @@ export default function SettingsTab({ userProfile, saveUserProfile, macroGoals, 
   const [restrictions, setRestrictions] = useState(p.restrictions || []);
   const [computed, setComputed] = useState(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
-  const [leaveFridgeOpen, setLeaveFridgeOpen] = useState(typeof localStorage !== "undefined" && localStorage.getItem("ff2-leave-fridge-open") === "true");
-
   // Sync state when userProfile changes externally
   useEffect(() => {
     const pr = userProfile || {};
@@ -94,25 +92,18 @@ export default function SettingsTab({ userProfile, saveUserProfile, macroGoals, 
     const fat = Math.round((calories * 0.25) / 9);
     const carbs = Math.round((calories - protein * 4 - fat * 9) / 4);
 
-    setComputed({
+    const result = {
       calories: Math.round(calories),
       protein,
       carbs: Math.max(carbs, 0),
       fat,
       tdee: Math.round(tdee),
       bmr: Math.round(bmr),
-    });
-  }
-
-  function applyComputed() {
-    if (!computed) return;
-    saveMacroGoals({
-      calories: computed.calories,
-      protein: computed.protein,
-      carbs: computed.carbs,
-      fat: computed.fat,
-    });
-    setComputed(null);
+    };
+    setComputed(result);
+    // Auto-apply
+    saveMacroGoals({ calories: result.calories, protein: result.protein, carbs: result.carbs, fat: result.fat });
+    showToast?.("Goals updated");
   }
 
   function handleSave() {
@@ -290,9 +281,33 @@ export default function SettingsTab({ userProfile, saveUserProfile, macroGoals, 
                 </div>
               </div>
             </Card>
-            <button className="cozy-btn primary full" onClick={applyComputed}>Apply to My Goals</button>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#4a7a4a", textAlign: "center", padding: "8px 0" }}>Applied to your daily targets</div>
           </div>
         )}
+      </Card>
+
+      {/* Manual Macro Goals */}
+      <Card style={{ marginBottom: 14, padding: 16 }}>
+        <div style={sectionTitle}>Daily Targets</div>
+        <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 12 }}>Set your own targets or use Calculate above.</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+          <div>
+            <label style={labelStyle}>Calories</label>
+            <input className="cozy-input" placeholder="2000" value={macroGoals?.calories ?? ""} onChange={e => saveMacroGoals({ ...(macroGoals || {}), calories: Number(e.target.value) || 0 })} inputMode="numeric" />
+          </div>
+          <div>
+            <label style={labelStyle}>Protein (g)</label>
+            <input className="cozy-input" placeholder="150" value={macroGoals?.protein ?? ""} onChange={e => saveMacroGoals({ ...(macroGoals || {}), protein: Number(e.target.value) || 0 })} inputMode="numeric" />
+          </div>
+          <div>
+            <label style={labelStyle}>Carbs (g)</label>
+            <input className="cozy-input" placeholder="250" value={macroGoals?.carbs ?? ""} onChange={e => saveMacroGoals({ ...(macroGoals || {}), carbs: Number(e.target.value) || 0 })} inputMode="numeric" />
+          </div>
+          <div>
+            <label style={labelStyle}>Fat (g)</label>
+            <input className="cozy-input" placeholder="65" value={macroGoals?.fat ?? ""} onChange={e => saveMacroGoals({ ...(macroGoals || {}), fat: Number(e.target.value) || 0 })} inputMode="numeric" />
+          </div>
+        </div>
       </Card>
 
       {/* Gym Profile */}
@@ -342,34 +357,6 @@ export default function SettingsTab({ userProfile, saveUserProfile, macroGoals, 
         Save Profile
       </button>
 
-      {/* App Preferences */}
-      <Card style={{ marginBottom: 14, padding: 16 }}>
-        <div style={sectionTitle}>Preferences</div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0" }}>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>Leave fridge open</div>
-            <div style={{ fontSize: 11, color: "var(--muted)" }}>Skip the door animation</div>
-          </div>
-          <button onClick={() => {
-            const current = localStorage.getItem("ff2-leave-fridge-open") === "true";
-            localStorage.setItem("ff2-leave-fridge-open", String(!current));
-            setLeaveFridgeOpen(!current);
-          }} style={{
-            width: 48, height: 28, borderRadius: 14, border: "none", cursor: "pointer",
-            background: leaveFridgeOpen ? "var(--accent)" : "#e0cdb5",
-            position: "relative", transition: "background 0.2s ease",
-            WebkitTapHighlightColor: "transparent",
-          }}>
-            <div style={{
-              width: 22, height: 22, borderRadius: 11, background: "white",
-              position: "absolute", top: 3,
-              left: leaveFridgeOpen ? 23 : 3,
-              transition: "left 0.2s ease",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.15)",
-            }} />
-          </button>
-        </div>
-      </Card>
 
       {/* Data Management */}
       <Card style={{ marginBottom: 14, padding: 16 }}>

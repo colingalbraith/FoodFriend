@@ -1,21 +1,4 @@
-import { useState, useEffect } from "react";
 import { daysUntil } from "../../utils/dateHelpers";
-
-/* Inject fridge door animation once */
-if (typeof document !== "undefined" && !document.getElementById("fridge-door-anim")) {
-  const style = document.createElement("style");
-  style.id = "fridge-door-anim";
-  style.textContent = `
-    @keyframes fridgeDoorOpen {
-      0% { transform: perspective(600px) rotateY(0deg); opacity: 0.85; }
-      50% { transform: perspective(600px) rotateY(-85deg); opacity: 0.7; }
-      65% { transform: perspective(600px) rotateY(-80deg); opacity: 0.3; }
-      80% { transform: perspective(600px) rotateY(-90deg); opacity: 0; }
-      100% { transform: perspective(600px) rotateY(-90deg); opacity: 0; }
-    }
-  `;
-  document.head.appendChild(style);
-}
 
 const SHELF_MAP = {
   Frozen: 0,
@@ -116,15 +99,6 @@ function FoodItem({ item, index }) {
 }
 
 export default function FridgeView({ items }) {
-  const leaveOpen = typeof localStorage !== "undefined" && localStorage.getItem("ff2-leave-fridge-open") === "true";
-  const [doorState, setDoorState] = useState(leaveOpen ? "open" : "closed"); // "closed" | "opening" | "open"
-
-  function handleTap() {
-    if (doorState === "closed") {
-      setDoorState("opening");
-      setTimeout(() => setDoorState("open"), 700);
-    }
-  }
   const shelves = [[], [], [], []];
   items.forEach(item => {
     const shelf = SHELF_MAP[item.category] ?? 2;
@@ -224,59 +198,6 @@ export default function FridgeView({ items }) {
           )}
         </div>
 
-        {/* Fridge door */}
-        {doorState !== "open" && (
-          <div onClick={handleTap} style={{
-            position: "absolute", inset: 0,
-            transformOrigin: "left center",
-            animation: doorState === "opening" ? "fridgeDoorOpen 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards" : "none",
-            cursor: doorState === "closed" ? "pointer" : "default",
-            zIndex: 2,
-            WebkitTapHighlightColor: "transparent",
-          }}>
-            {/* Door surface */}
-            <div style={{
-              position: "absolute", inset: 0,
-              background: "linear-gradient(170deg, #e8dcc8 0%, #d4c4a8 40%, #c4b496 100%)",
-              borderRadius: 22,
-              boxShadow: "2px 0 12px rgba(0,0,0,0.15)",
-            }} />
-            {/* Door handle */}
-            <div style={{
-              position: "absolute", right: 12, top: "36%",
-              width: 5, height: 36,
-              background: "linear-gradient(180deg, #b09070 0%, #a08060 100%)",
-              borderRadius: 3,
-            }} />
-            {/* Door magnets */}
-            <div style={{ position: "absolute", top: 14, left: 14, width: 8, height: 8, borderRadius: 2, background: "#d48a7b", opacity: 0.6, transform: "rotate(5deg)" }} />
-            <div style={{ position: "absolute", top: 12, left: 26, width: 6, height: 9, borderRadius: 2, background: "#8ab4d4", opacity: 0.5, transform: "rotate(-8deg)" }} />
-            <div style={{ position: "absolute", top: 18, right: 42, width: 7, height: 7, borderRadius: "50%", background: "#e8c86a", opacity: 0.5 }} />
-            {/* Door label + tap hint */}
-            <div style={{
-              position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
-              textAlign: "center",
-            }}>
-              <div style={{ fontFamily: "var(--display)", fontSize: 22, fontWeight: 700, color: "#b09070", opacity: 0.5 }}>
-                Stockd
-              </div>
-              {doorState === "closed" && (
-                <div style={{ fontSize: 10, fontWeight: 700, color: "#b09070", opacity: 0.35, marginTop: 4 }}>
-                  tap to open
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Handle (visible after door opens) */}
-        <div style={{
-          position: "absolute", right: -3, top: "36%",
-          width: 5, height: 36,
-          background: "linear-gradient(180deg, #c4a882 0%, #b09070 100%)",
-          borderRadius: "0 3px 3px 0",
-          boxShadow: "1px 1px 4px rgba(0,0,0,0.1)",
-        }} />
       </div>
 
       {/* Fullness */}
